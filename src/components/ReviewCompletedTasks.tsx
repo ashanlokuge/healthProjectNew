@@ -3,6 +3,7 @@ import { supabase, Assignment, HazardReport } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { CheckCircle, XCircle, Eye, Download, Clock } from 'lucide-react';
 import { TaskStatusDisplay } from './TaskStatusDisplay';
+import { Evidence } from '../lib/supabase'; // Import Evidence type
 
 interface AssignmentWithDetails extends Assignment {
   hazard_reports: HazardReport;
@@ -12,16 +13,44 @@ interface AssignmentWithDetails extends Assignment {
   };
 }
 
+// Define StatusData interface
+interface StatusData {
+  status: 'approved' | 'rejected' | 'pending' | undefined;
+  assignmentId: string;
+  hazardTitle: string;
+  assigneeName: string;
+  reviewerName: string;
+  reviewReason?: string | null; // Make optional and allow null
+  reviewedAt?: string; // Make optional as it might not always be present for existing data
+}
+
 export function ReviewCompletedTasks() {
   const { profile } = useAuth();
   const [completedAssignments, setCompletedAssignments] = useState<AssignmentWithDetails[]>([]);
   const [selectedAssignment, setSelectedAssignment] = useState<AssignmentWithDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [reviewing, setReviewing] = useState(false);
-  const [evidenceFiles, setEvidenceFiles] = useState<any[]>([]);
+  const [evidenceFiles, setEvidenceFiles] = useState<Evidence[]>([]); // Use Evidence type
   const [loadingEvidence, setLoadingEvidence] = useState(false);
   const [showStatusDisplay, setShowStatusDisplay] = useState(false);
-  const [statusData, setStatusData] = useState<any>(null);
+  const [statusData, setStatusData] = useState<StatusData | null>(null); // Use StatusData type
+
+  const loadEvidence = useCallback(async (assignmentId: string) => {
+    try {
+      console.log('🔍 Loading evidence for assignment:', assignmentId);
+      const { data, error } = await supabase
+        .from('evidences')
+        .select('*')
+        .eq('assignment_id', assignmentId);
+
+      console.log('📊 Evidence query result:', { data, error });
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('❌ Error loading evidence:', error);
+      return [];
+    }
+  }, []); // Empty dependency array as it doesn't depend on component props/state
 
   const loadCompletedAssignments = useCallback(async () => {
     try {
@@ -38,7 +67,7 @@ export function ReviewCompletedTasks() {
           )
         `)
         .eq('reviewer_id', profile?.id)
-        .or('completed_at.not.is.null,review_status.eq.approved,review_status.eq.rejected')
+        .or('review_status.eq.approved,review_status.eq.rejected')
         .order('completed_at', { ascending: false });
 
       console.log('📊 Completed assignments query result:', { data, error });
@@ -56,6 +85,27 @@ export function ReviewCompletedTasks() {
   useEffect(() => {
     loadCompletedAssignments();
   }, [loadCompletedAssignments]);
+
+  // Refactored useEffect for loading evidence
+  useEffect(() => {
+    const loadEvidenceForAssignment = async () => {
+      if (selectedAssignment?.id) {
+        setLoadingEvidence(true);
+        try {
+          const evidence = await loadEvidence(selectedAssignment.id);
+          setEvidenceFiles(evidence);
+          console.log('✅ Loaded evidence files:', evidence);
+        } catch (error) {
+          console.error('❌ Error loading evidence:', error);
+          setEvidenceFiles([]);
+        } finally {
+          setLoadingEvidence(false);
+        }
+      }
+    };
+
+    loadEvidenceForAssignment();
+  }, [selectedAssignment?.id, loadEvidence]); // Added loadEvidence to dependencies
 
   const handleAccept = async (assignment: AssignmentWithDetails) => {
     console.log('✅ Accepting assignment:', assignment.id);
@@ -149,23 +199,6 @@ export function ReviewCompletedTasks() {
     }
   };
 
-  const loadEvidence = async (assignmentId: string) => {
-    try {
-      console.log('🔍 Loading evidence for assignment:', assignmentId);
-      const { data, error } = await supabase
-        .from('evidences')
-        .select('*')
-        .eq('assignment_id', assignmentId);
-
-      console.log('📊 Evidence query result:', { data, error });
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('❌ Error loading evidence:', error);
-      return [];
-    }
-  };
-
   if (showStatusDisplay && statusData) {
     return (
       <TaskStatusDisplay
@@ -200,28 +233,12 @@ export function ReviewCompletedTasks() {
     );
   }
 
-  if (selectedAssignment) {
-    // Load evidence when assignment is selected
-    React.useEffect(() => {
-      const loadEvidenceForAssignment = async () => {
-        setLoadingEvidence(true);
-        try {
-          const evidence = await loadEvidence(selectedAssignment.id);
-          setEvidenceFiles(evidence);
-          console.log('✅ Loaded evidence files:', evidence);
-        } catch (error) {
-          console.error('❌ Error loading evidence:', error);
-          setEvidenceFiles([]);
-        } finally {
-          setLoadingEvidence(false);
-        }
-      };
+  // Removed conditional useEffect block for selectedAssignment
+  // The useEffect for loading evidence is now at the top level
 
-      loadEvidenceForAssignment();
-    }, [selectedAssignment.id]);
-
-    return (
-      <div className="min-h-screen bg-gray-50 p-4">
+  return (
+    <div className="min-h-screen bg-gray-50 p-4">
+      {selectedAssignment && ( // Render selected assignment details if available
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="flex items-center justify-between mb-6">
@@ -253,8 +270,8 @@ export function ReviewCompletedTasks() {
                   <div className="space-y-2">
                     <p><strong>Assignee:</strong> {selectedAssignment.assignee_profile?.full_name || 'Unknown'} ({selectedAssignment.assignee_profile?.email})</p>
                     <p><strong>Action Required:</strong> {selectedAssignment.action}</p>
-                    <p><strong>Target Date:</strong> {new Date(selectedAssignment.target_completion_date).toLocaleDateString()}</p>
-                                         <p><strong>Completed Date:</strong> {new Date(selectedAssignment.completed_at).toLocaleDateString()}</p>
+                    <p><strong>Target Date:</strong> {selectedAssignment.target_completion_date ? new Date(selectedAssignment.target_completion_date).toLocaleDateString() : 'N/A'}</p>
+                    <p><strong>Completed Date:</strong> {selectedAssignment.completed_at ? new Date(selectedAssignment.completed_at).toLocaleDateString() : 'N/A'}</p>
                     <p><strong>Remark:</strong> {selectedAssignment.remark || 'No remarks'}</p>
                   </div>
                 </div>
@@ -270,7 +287,7 @@ export function ReviewCompletedTasks() {
                 ) : evidenceFiles.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {evidenceFiles.map((evidence, index) => (
-                      <div key={index} className="p-4 border border-gray-200 rounded-lg">
+                      <div key={evidence.id || index} className="p-4 border border-gray-200 rounded-lg"> {/* Use evidence.id for key */}
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-sm font-medium text-gray-700">
                             {evidence.file_name || `Evidence ${index + 1}`}
@@ -287,16 +304,14 @@ export function ReviewCompletedTasks() {
                           </button>
                         </div>
                         {evidence.file_url && (
-                          <div className="aspect-video bg-gray-100 rounded overflow-hidden">
-                            <img 
-                              src={evidence.file_url} 
-                              alt="Evidence" 
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                              }}
-                            />
-                          </div>
+                          <img 
+                            src={evidence.file_url} 
+                            alt="Evidence" 
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
                         )}
                       </div>
                     ))}
@@ -330,103 +345,101 @@ export function ReviewCompletedTasks() {
             </div>
           </div>
         </div>
-      </div>
-    );
-  }
+      )}
 
-  return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded-lg shadow-sm p-6">
-                     <div className="flex items-center justify-between mb-6">
-             <h1 className="text-2xl font-bold text-blue-600">Review Completed Tasks</h1>
-             <div className="flex items-center space-x-2">
-               <Clock className="w-5 h-5 text-gray-400" />
-               <span className="text-sm text-gray-500">{completedAssignments.length} tasks</span>
-             </div>
-           </div>
-
-          {completedAssignments.length === 0 ? (
-            <div className="text-center py-12">
-              <CheckCircle className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No completed tasks to review</h3>
-              <p className="text-gray-500">When assignees complete tasks, they will appear here for your review.</p>
+      {!selectedAssignment && ( // Only render the list if no assignment is selected
+        <div className="max-w-6xl mx-auto">
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-2xl font-bold text-blue-600">Review Completed Tasks</h1>
+              <div className="flex items-center space-x-2">
+                <Clock className="w-5 h-5 text-gray-400" />
+                <span className="text-sm text-gray-500">{completedAssignments.length} tasks</span>
+              </div>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {completedAssignments.map((assignment) => (
-                <div key={assignment.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                  <div className="flex items-center justify-between">
-                                         <div className="flex-1">
-                       <h3 className="font-semibold text-gray-900 mb-1">
-                         {assignment.hazard_reports.hazard_title}
-                       </h3>
-                       <p className="text-sm text-gray-600 mb-2">
-                         Completed by: {assignment.assignee_profile?.full_name || 'Unknown'} ({assignment.assignee_profile?.email})
-                       </p>
-                       <p className="text-sm text-gray-500">
-                         Completed on: {new Date(assignment.completed_at).toLocaleDateString()}
-                       </p>
-                       {assignment.review_status && (
-                         <div className="mt-2">
-                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                             assignment.review_status === 'approved'
-                               ? 'bg-green-100 text-green-800'
-                               : assignment.review_status === 'rejected'
-                               ? 'bg-red-100 text-red-800'
-                               : 'bg-yellow-100 text-yellow-800'
-                           }`}>
-                             {assignment.review_status.toUpperCase()}
-                           </span>
-                         </div>
-                       )}
-                     </div>
-                                         <div className="flex items-center space-x-2">
-                       {assignment.review_status === 'approved' || assignment.review_status === 'rejected' ? (
-                         <button
-                           onClick={(e) => {
-                             e.preventDefault();
-                             e.stopPropagation();
-                             console.log('🔍 View status clicked for assignment:', assignment.id);
-                             setStatusData({
-                               status: assignment.review_status,
-                               assignmentId: assignment.id,
-                               hazardTitle: assignment.hazard_reports.hazard_title,
-                               assigneeName: assignment.assignee_profile?.full_name || 'Unknown',
-                               reviewerName: profile?.full_name || 'Unknown',
-                               reviewReason: assignment.review_reason || 'No review comments',
-                               reviewedAt: assignment.reviewed_at
-                             });
-                             setShowStatusDisplay(true);
-                           }}
-                           className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors flex items-center"
-                         >
-                           <Eye className="w-4 h-4 mr-2" />
-                           View Status
-                         </button>
-                       ) : (
-                         <button
-                           onClick={(e) => {
-                             e.preventDefault();
-                             e.stopPropagation();
-                             console.log('🔍 Review button clicked for assignment:', assignment.id);
-                             console.log('📊 Assignment data:', assignment);
-                             setSelectedAssignment(assignment);
-                           }}
-                           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center"
-                         >
-                           <Eye className="w-4 h-4 mr-2" />
-                           Review Completion →
-                         </button>
-                       )}
-                     </div>
+
+            {completedAssignments.length === 0 ? (
+              <div className="text-center py-12">
+                <CheckCircle className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No completed tasks to review</h3>
+                <p className="text-gray-500">When assignees complete tasks, they will appear here for your review.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {completedAssignments.map((assignment) => (
+                  <div key={assignment.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 mb-1">
+                          {assignment.hazard_reports.hazard_title}
+                        </h3>
+                        <p className="text-sm text-gray-600 mb-2">
+                          Completed by: {assignment.assignee_profile?.full_name || 'Unknown'} ({assignment.assignee_profile?.email})
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Completed on: {assignment.completed_at ? new Date(assignment.completed_at).toLocaleDateString() : 'N/A'}
+                        </p>
+                        {assignment.review_status && (
+                          <div className="mt-2">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              assignment.review_status === 'approved'
+                                ? 'bg-green-100 text-green-800'
+                                : assignment.review_status === 'rejected'
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {assignment.review_status.toUpperCase()}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {assignment.review_status === 'approved' || assignment.review_status === 'rejected' ? (
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log('🔍 View status clicked for assignment:', assignment.id);
+                              setStatusData({
+                                status: assignment.review_status,
+                                assignmentId: assignment.id,
+                                hazardTitle: assignment.hazard_reports.hazard_title,
+                                assigneeName: assignment.assignee_profile?.full_name || 'Unknown',
+                                reviewerName: profile?.full_name || 'Unknown',
+                                reviewReason: assignment.review_reason || 'No review comments',
+                                reviewedAt: assignment.reviewed_at || 'N/A' // Fallback for reviewedAt
+                              });
+                              setShowStatusDisplay(true);
+                            }}
+                            className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors flex items-center"
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            View Status
+                          </button>
+                        ) : (
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log('🔍 Review button clicked for assignment:', assignment.id);
+                              console.log('📊 Assignment data:', assignment);
+                              setSelectedAssignment(assignment);
+                            }}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center"
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            Review Completion →
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
-} 
+}

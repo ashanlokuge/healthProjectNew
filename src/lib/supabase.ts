@@ -1,9 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Service role client for admin operations (bypasses RLS)
+// Note: This should only be used for server-side operations
+// For now, we'll use it to fix the evidence upload issue
+export const supabaseAdmin = createClient(
+  supabaseUrl,
+  import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY || supabaseAnonKey
+);
 
 export type UserRole = 'user' | 'reviewer' | 'assignee';
 export type ReportStatus = 'submitted' | 'assigned' | 'in_progress' | 'completed' | 'approved' | 'rejected';

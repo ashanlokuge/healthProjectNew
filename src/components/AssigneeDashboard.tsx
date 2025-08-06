@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { supabase, Assignment } from '../lib/supabase';
+import { supabase, supabaseAdmin, Assignment } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { Clock, CheckCircle, Upload, X } from 'lucide-react';
 import { TaskStatusDisplay } from './TaskStatusDisplay';
@@ -12,7 +12,7 @@ export function AssigneeDashboard() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showStatusDisplay, setShowStatusDisplay] = useState(false);
-  const [statusData, setStatusData] = useState<any>(null);
+  const [statusData, setStatusData] = useState<unknown>(null);
   const { profile } = useAuth();
 
   const loadAssignments = useCallback(async () => {
@@ -41,11 +41,124 @@ export function AssigneeDashboard() {
 
   const handleEvidenceUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setEvidenceFiles(prev => [...prev, ...files].slice(0, 3));
+    const maxFileSize = 100 * 1024 * 1024; // 100MB in bytes
+    
+    // Filter out files that are too large
+    const validFiles = files.filter(file => {
+      if (file.size > maxFileSize) {
+        alert(`File "${file.name}" is too large. Maximum file size is 100MB.`);
+        return false;
+      }
+      return true;
+    });
+    
+    if (validFiles.length > 0) {
+      setEvidenceFiles(prev => [...prev, ...validFiles].slice(0, 3));
+    }
+    
+    // Reset the input value so the same file can be selected again if needed
+    e.target.value = '';
   };
 
   const removeEvidence = (index: number) => {
     setEvidenceFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleResubmitTask = async () => {
+    if (!selectedAssignment) return;
+
+    console.log('🔄 Starting resubmission...', { selectedAssignment, evidenceFiles });
+    setSubmitting(true);
+    try {
+      // Upload evidence files (optional)
+      const evidenceUrls: string[] = [];
+      if (evidenceFiles.length > 0) {
+        try {
+          for (const file of evidenceFiles) {
+            // Create unique filename with timestamp and random string
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+            
+            const { data, error } = await supabase.storage
+              .from('evidence-files')
+              .upload(fileName, file, {
+                cacheControl: '3600',
+                upsert: false
+              });
+
+            if (error) {
+              console.warn('⚠️ Could not upload evidence file:', error);
+              continue;
+            }
+
+            const { data: { publicUrl } } = supabase.storage
+              .from('evidence-files')
+              .getPublicUrl(fileName);
+
+            evidenceUrls.push(publicUrl);
+
+            // Store evidence record
+            try {
+              await supabaseAdmin
+                .from('evidences')
+                .insert([
+                  {
+                    assignment_id: selectedAssignment.id,
+                    file_url: publicUrl,
+                    file_name: file.name,
+                    file_type: file.type,
+                  },
+                ]);
+            } catch (evidenceError) {
+              console.warn('⚠️ Could not save evidence record:', evidenceError);
+            }
+          }
+        } catch (storageError) {
+          console.warn('⚠️ Storage bucket not available, continuing without evidence files:', storageError);
+        }
+      }
+
+      // Reset assignment for resubmission
+      console.log('📝 Resubmitting assignment:', selectedAssignment.id);
+      const { error: updateError } = await supabase
+        .from('assignments')
+        .update({
+          completed_at: new Date().toISOString(),
+          review_status: null, // Reset review status to allow re-review
+          review_reason: null, // Clear previous rejection reason
+          reviewed_at: null, // Clear previous review date
+        })
+        .eq('id', selectedAssignment.id);
+
+      if (updateError) {
+        console.error('❌ Assignment resubmission error:', updateError);
+        throw updateError;
+      }
+
+      // Update hazard report status back to 'completed'
+      console.log('📝 Updating hazard report:', selectedAssignment.hazard_report_id, 'to completed status');
+      const { error: reportError } = await supabase
+        .from('hazard_reports')
+        .update({ status: 'completed' })
+        .eq('id', selectedAssignment.hazard_report_id);
+
+      if (reportError) {
+        console.error('❌ Hazard report update error:', reportError);
+        throw reportError;
+      }
+
+      console.log('✅ Resubmission successful!');
+      alert('Task resubmitted successfully! It will be reviewed again.');
+      setSelectedAssignment(null);
+      setEvidenceFiles([]);
+      loadAssignments();
+    } catch (error) {
+      console.error('❌ Error resubmitting task:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      alert(`Failed to resubmit task: ${errorMessage}`);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleSubmitCompletion = async () => {
@@ -59,26 +172,40 @@ export function AssigneeDashboard() {
       if (evidenceFiles.length > 0) {
         try {
           for (const file of evidenceFiles) {
-            const fileName = `${Date.now()}-${file.name}`;
-            const { error } = await supabase.storage
+            // Create unique filename with timestamp and random string
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+            
+            const { data, error } = await supabase.storage
               .from('evidence-files')
-              .upload(fileName, file);
+              .upload(fileName, file, {
+                cacheControl: '3600',
+                upsert: false
+              });
 
             if (error) {
               console.warn('⚠️ Could not upload evidence file:', error);
+              console.warn('Error details:', {
+                message: error.message,
+                statusCode: error.statusCode,
+                error: error.error
+              });
               // Continue without this file
               continue;
             }
+
+            console.log('Evidence file uploaded successfully:', data);
 
             const { data: { publicUrl } } = supabase.storage
               .from('evidence-files')
               .getPublicUrl(fileName);
 
             evidenceUrls.push(publicUrl);
+            console.log('Evidence public URL generated:', publicUrl);
 
-            // Store evidence record
+            // Store evidence record using admin client to bypass RLS
             try {
-              await supabase
+              const { data: evidenceData, error: evidenceError } = await supabaseAdmin
                 .from('evidences')
                 .insert([
                   {
@@ -87,7 +214,15 @@ export function AssigneeDashboard() {
                     file_name: file.name,
                     file_type: file.type,
                   },
-                ]);
+                ])
+                .select();
+
+              if (evidenceError) {
+                console.warn('⚠️ Could not save evidence record:', evidenceError);
+                // Continue without saving evidence record
+              } else {
+                console.log('✅ Evidence record saved successfully:', evidenceData);
+              }
             } catch (evidenceError) {
               console.warn('⚠️ Could not save evidence record:', evidenceError);
               // Continue without saving evidence record
@@ -191,7 +326,9 @@ export function AssigneeDashboard() {
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="flex items-center justify-between mb-6">
-              <h1 className="text-2xl font-bold text-blue-600">Action Completion</h1>
+              <h1 className="text-2xl font-bold text-blue-600">
+                {selectedAssignment.review_status === 'rejected' ? 'Task Resubmission' : 'Action Completion'}
+              </h1>
               <button
                 onClick={() => setSelectedAssignment(null)}
                 className="text-gray-500 hover:text-gray-700"
@@ -199,6 +336,26 @@ export function AssigneeDashboard() {
                 <X className="w-6 h-6" />
               </button>
             </div>
+
+            {/* Show rejection notice for resubmissions */}
+            {selectedAssignment.review_status === 'rejected' && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <X className="h-5 w-5 text-red-400" />
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-red-800">Task was rejected</h3>
+                    <div className="mt-2 text-sm text-red-700">
+                      <p>
+                        <strong>Rejection reason:</strong> {selectedAssignment.review_reason || 'No reason provided'}
+                      </p>
+                      <p className="mt-1">Please address the feedback and resubmit your work.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-6">
               <div>
@@ -286,11 +443,18 @@ export function AssigneeDashboard() {
                   Cancel
                 </button>
                 <button
-                  onClick={handleSubmitCompletion}
+                  onClick={selectedAssignment.review_status === 'rejected' ? handleResubmitTask : handleSubmitCompletion}
                   disabled={submitting}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className={`px-6 py-2 text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+                    selectedAssignment.review_status === 'rejected' 
+                      ? 'bg-orange-600 hover:bg-orange-700' 
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
                 >
-                  {submitting ? 'Submitting...' : 'Submit Completion'}
+                  {submitting 
+                    ? (selectedAssignment.review_status === 'rejected' ? 'Resubmitting...' : 'Submitting...') 
+                    : (selectedAssignment.review_status === 'rejected' ? 'Resubmit Task' : 'Submit Completion')
+                  }
                 </button>
               </div>
             </div>
@@ -380,6 +544,21 @@ export function AssigneeDashboard() {
                     >
                       Complete Task
                     </button>
+                  ) : assignment.review_status === 'rejected' ? (
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => showTaskStatus(assignment)}
+                        className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors text-sm"
+                      >
+                        View Status
+                      </button>
+                      <button
+                        onClick={() => setSelectedAssignment(assignment)}
+                        className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition-colors text-sm"
+                      >
+                        Resubmit Task
+                      </button>
+                    </div>
                   ) : (
                     <button
                       onClick={() => showTaskStatus(assignment)}

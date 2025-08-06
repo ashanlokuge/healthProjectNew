@@ -2,12 +2,12 @@ import React from 'react';
 import { CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react';
 
 interface TaskStatusDisplayProps {
-  status: 'approved' | 'rejected' | 'pending' | 'completed';
+  status: 'approved' | 'rejected' | 'pending' | 'completed' | undefined;
   assignmentId: string;
   hazardTitle: string;
   assigneeName: string;
   reviewerName: string;
-  reviewReason?: string;
+  reviewReason?: string | null;
   reviewedAt?: string;
   onBack: () => void;
 }
@@ -51,14 +51,23 @@ export function TaskStatusDisplay({
           borderColor: 'border-blue-200',
           textColor: 'text-blue-800'
         };
-      default:
+      case 'pending':
         return {
-          icon: <AlertCircle className="w-16 h-16 text-yellow-500" />,
+          icon: <Clock className="w-16 h-16 text-yellow-500" />,
           title: 'Task Pending',
-          subtitle: 'The task is currently pending',
+          subtitle: 'The task is currently pending review',
           bgColor: 'bg-yellow-50',
           borderColor: 'border-yellow-200',
           textColor: 'text-yellow-800'
+        };
+      default: // Handles undefined status
+        return {
+          icon: <AlertCircle className="w-16 h-16 text-gray-400" />,
+          title: 'Status Unknown',
+          subtitle: 'The status of this task is not available',
+          bgColor: 'bg-gray-50',
+          borderColor: 'border-gray-200',
+          textColor: 'text-gray-700'
         };
     }
   };
@@ -147,4 +156,4 @@ export function TaskStatusDisplay({
       </div>
     </div>
   );
-} 
+}

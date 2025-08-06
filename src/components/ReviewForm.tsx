@@ -40,20 +40,40 @@ export function ReviewForm({ assignment, onBack, onSuccess }: ReviewFormProps) {
   const handleReview = async (approved: boolean) => {
     setSubmitting(true);
     try {
-      console.log('✅ Processing review:', { approved, assignmentId: assignment.id });
+      console.log('✅ Processing review:', { 
+        approved, 
+        assignmentId: assignment.id,
+        reviewStatus: approved ? 'approved' : 'rejected',
+        reviewReason: reviewReason
+      });
       
-      const { error } = await supabase
+      const updateData = {
+        review_status: approved ? 'approved' : 'rejected',
+        review_reason: reviewReason,
+        reviewed_at: new Date().toISOString(),
+      };
+      
+      console.log('📝 Update data:', updateData);
+      
+      const { data, error } = await supabase
         .from('assignments')
-        .update({
-          review_status: approved ? 'approved' : 'rejected',
-          review_reason: reviewReason,
-          reviewed_at: new Date().toISOString(),
-        })
-        .eq('id', assignment.id);
+        .update(updateData)
+        .eq('id', assignment.id)
+        .select(); // Add select to see what was actually updated
 
-      console.log('📝 Assignment update result:', { error });
+      console.log('📝 Assignment update result:', { data, error });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Update error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        throw error;
+      }
+      
+      console.log('✅ Assignment updated successfully:', data);
 
       // Update hazard report status
       const { error: reportError } = await supabase

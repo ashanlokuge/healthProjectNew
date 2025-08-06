@@ -42,14 +42,33 @@ export function HazardForm({ onBack, onSuccess }: HazardFormProps) {
       for (const file of imageFiles) {
         console.log('Uploading image:', file.name);
         
-        const fileName = `${Date.now()}-${file.name}`;
+        // Create unique filename with timestamp and random string
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        
         const { data, error } = await supabase.storage
           .from('hazard-images')
-          .upload(fileName, file);
+          .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: false
+          });
 
         if (error) {
           console.error('Error uploading image:', error);
-          throw error;
+          console.error('Error details:', {
+            message: error.message,
+            statusCode: error.statusCode,
+            error: error.error
+          });
+          
+          // Provide more specific error messages
+          if (error.message.includes('Bucket not found')) {
+            throw new Error('Storage bucket not configured. Please contact administrator.');
+          } else if (error.message.includes('Policy')) {
+            throw new Error('Storage permissions not configured. Please contact administrator.');
+          } else {
+            throw new Error(`Image upload failed: ${error.message}`);
+          }
         }
         
         console.log('Image uploaded successfully:', data);
@@ -59,6 +78,7 @@ export function HazardForm({ onBack, onSuccess }: HazardFormProps) {
           .getPublicUrl(fileName);
         
         imageUrls.push(publicUrl);
+        console.log('Public URL generated:', publicUrl);
       }
 
       console.log('All images uploaded:', imageUrls);
@@ -106,7 +126,23 @@ export function HazardForm({ onBack, onSuccess }: HazardFormProps) {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setImageFiles(prev => [...prev, ...files].slice(0, 3));
+    const maxFileSize = 100 * 1024 * 1024; // 100MB in bytes
+    
+    // Filter out files that are too large
+    const validFiles = files.filter(file => {
+      if (file.size > maxFileSize) {
+        alert(`File "${file.name}" is too large. Maximum file size is 100MB.`);
+        return false;
+      }
+      return true;
+    });
+    
+    if (validFiles.length > 0) {
+      setImageFiles(prev => [...prev, ...validFiles].slice(0, 3));
+    }
+    
+    // Reset the input value so the same file can be selected again if needed
+    e.target.value = '';
   };
 
   const removeImage = (index: number) => {

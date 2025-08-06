@@ -1,49 +1,63 @@
--- Debug the review issue
--- Run this in your Supabase SQL Editor
+-- Debug Review Status Issue
+-- Run this in your Supabase SQL Editor to see what's happening
 
--- Check if assignments table has the right columns
-SELECT '=== ASSIGNMENTS TABLE STRUCTURE ===' as info;
-SELECT column_name, data_type, is_nullable, column_default 
-FROM information_schema.columns 
-WHERE table_name = 'assignments' 
-ORDER BY ordinal_position;
-
--- Check if evidences table exists and has data
-SELECT '=== EVIDENCES TABLE CHECK ===' as info;
-SELECT 
-    COUNT(*) as total_evidences,
-    COUNT(DISTINCT assignment_id) as assignments_with_evidence
-FROM evidences;
-
--- Check recent assignments that should be reviewable
-SELECT '=== RECENT ASSIGNMENTS ===' as info;
+-- 1. Check all assignments and their review status
+SELECT '=== ALL ASSIGNMENTS ===' as info;
 SELECT 
     a.id,
-    a.hazard_report_id,
-    a.reviewer_id,
-    a.assignee_id,
+    hr.hazard_title,
     a.completed_at,
     a.review_status,
     a.reviewed_at,
-    hr.hazard_title,
-    hr.status as report_status,
-    reviewer.email as reviewer_email,
-    assignee.email as assignee_email
+    p.full_name as assignee_name
 FROM assignments a
-LEFT JOIN hazard_reports hr ON a.hazard_report_id = hr.id
-LEFT JOIN profiles reviewer ON a.reviewer_id = reviewer.id
-LEFT JOIN profiles assignee ON a.assignee_id = assignee.id
-WHERE a.completed_at IS NOT NULL
-ORDER BY a.completed_at DESC
-LIMIT 5;
+JOIN hazard_reports hr ON a.hazard_report_id = hr.id
+JOIN profiles p ON a.assignee_id = p.id
+ORDER BY a.created_at DESC
+LIMIT 10;
 
--- Check if there are any RLS policies blocking access
-SELECT '=== RLS POLICIES ON ASSIGNMENTS ===' as info;
+-- 2. Check specifically for approved/rejected tasks
+SELECT '=== APPROVED/REJECTED TASKS ===' as info;
 SELECT 
-    policyname,
-    permissive,
-    roles,
-    cmd,
-    qual
-FROM pg_policies 
-WHERE tablename = 'assignments'; 
+    a.id,
+    hr.hazard_title,
+    a.review_status,
+    a.reviewed_at,
+    p.full_name as assignee_name
+FROM assignments a
+JOIN hazard_reports hr ON a.hazard_report_id = hr.id
+JOIN profiles p ON a.assignee_id = p.id
+WHERE a.review_status IN ('approved', 'rejected')
+ORDER BY a.reviewed_at DESC;
+
+-- 3. Check for tasks that should be excluded from "My Assignments"
+SELECT '=== TASKS THAT SHOULD BE EXCLUDED ===' as info;
+SELECT 
+    a.id,
+    hr.hazard_title,
+    a.review_status,
+    a.completed_at,
+    a.reviewed_at,
+    CASE 
+        WHEN a.review_status IN ('approved', 'rejected') THEN 'Should be excluded'
+        ELSE 'Should be included'
+    END as should_be_excluded
+FROM assignments a
+JOIN hazard_reports hr ON a.hazard_report_id = hr.id
+WHERE a.review_status IN ('approved', 'rejected')
+ORDER BY a.created_at DESC;
+
+-- 4. Check the exact query that should work for "My Assignments"
+SELECT '=== MY ASSIGNMENTS QUERY TEST ===' as info;
+SELECT 
+    a.id,
+    hr.hazard_title,
+    a.review_status,
+    a.completed_at,
+    p.full_name as assignee_name
+FROM assignments a
+JOIN hazard_reports hr ON a.hazard_report_id = hr.id
+JOIN profiles p ON a.assignee_id = p.id
+WHERE a.review_status NOT IN ('approved', 'rejected') 
+   OR a.review_status IS NULL
+ORDER BY a.created_at DESC;
