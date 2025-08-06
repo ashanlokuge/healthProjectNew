@@ -175,10 +175,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    console.log('Attempting to sign out...');
+    // Clear local state immediately for a responsive UI
+    setUser(null);
+    setProfile(null);
     setIsDeveloper(false);
     setCurrentRole(null);
+    setLoading(false); // Ensure loading is false after sign out attempt
+
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Error during Supabase sign out:', error);
+        // Even if there's an error, the local state is already cleared.
+        // We might want to re-throw or handle this error more gracefully
+        // depending on desired user experience. For now, just log.
+        throw error;
+      }
+      console.log('Supabase sign out successful.');
+    } catch (error) {
+      console.error('Caught error during sign out process:', error);
+      // If an error occurs, the local state is already cleared,
+      // so the UI should reflect signed out.
+    }
   };
 
   const setDeveloperMode = (mode: boolean) => {

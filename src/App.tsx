@@ -67,7 +67,10 @@ function AppContent() {
               </p>
             </div>
             <button
-              onClick={signOut}
+              onClick={() => {
+                console.log('Sign Out button clicked.');
+                signOut();
+              }}
               className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
             >
               <LogOut className="w-4 h-4" />
