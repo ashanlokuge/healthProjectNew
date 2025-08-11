@@ -96,3 +96,21 @@ export interface Evidence {
   file_type?: string;
   uploaded_at: string;
 }
+
+export interface SOTReport {
+  id: string;
+  user_id: string;
+  site: string;
+  department: string;
+  location: string;
+  personal_category: string;
+  details_if_observation?: string;
+  date: string;
+  date_of_reporting: string;
+  time_duration?: string;
+  type_of_work: string;
+  add_action?: string;
+  status: 'submitted' | 'reviewed' | 'approved' | 'rejected';
+  created_at: string;
+  updated_at: string;
+}

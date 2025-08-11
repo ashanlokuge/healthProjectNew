@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { HazardReporting } from './HazardReporting';
 import { IncidentReporting } from './IncidentReporting';
+import SOTReportingForm from './SOTReportingForm'; // Import the new component
 import { LogOut, AlertTriangle, FileText, Shield, Clock, UserCheck, CheckCircle, Settings, User, Bell } from 'lucide-react';
 
 type MenuOption = 
@@ -118,6 +119,10 @@ export function MainDashboard() {
 
   if (selectedMenu === 'incident-reporting') {
     return <IncidentReporting onBack={handleBackToMenu} />;
+  }
+
+  if (selectedMenu === 'sot-reporting') {
+    return <SOTReportingForm onBack={handleBackToMenu} />; // Render SOTReportingForm with back function
   }
 
   return (
@@ -247,4 +252,4 @@ export function MainDashboard() {
       </div>
     </div>
   );
-} 
+}

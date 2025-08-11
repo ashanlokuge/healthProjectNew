@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase, supabaseAdmin } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { Clock, CheckCircle, Upload, X } from 'lucide-react';
+import { Clock, CheckCircle, Upload, X, ArrowLeft } from 'lucide-react';
 
 interface IncidentAssignment {
   id: string;
@@ -243,11 +243,19 @@ export function IncidentAssigneeDashboard() {
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">
-                  {selectedAssignment.incident_reports?.incident_title || 'Untitled Incident'}
-                </h2>
-                <p className="text-gray-600 mt-1">Complete incident-related task</p>
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={() => setSelectedAssignment(null)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600 hover:text-gray-900"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    {selectedAssignment.incident_reports?.incident_title || 'Untitled Incident'}
+                  </h2>
+                  <p className="text-gray-600 mt-1">Complete incident-related task</p>
+                </div>
               </div>
               <button
                 onClick={() => setSelectedAssignment(null)}

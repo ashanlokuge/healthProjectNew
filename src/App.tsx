@@ -5,7 +5,6 @@ import { Login } from './components/Login';
 import { MainDashboard } from './components/MainDashboard';
 import { DeveloperMode } from './components/DeveloperMode';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { DebugInfo } from './components/DebugInfo';
 
 function AppContent() {
   const { user, profile, loading, isDeveloper, currentRole } = useAuth();
@@ -50,7 +49,6 @@ function App() {
       <Router>
         <AuthProvider>
           <AppContent />
-          {import.meta.env.DEV && <DebugInfo />}
         </AuthProvider>
       </Router>
     </ErrorBoundary>
