@@ -3,7 +3,6 @@ import react from '@vitejs/plugin-react';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: './', // Ensure relative paths for deployment
   plugins: [react()],
   optimizeDeps: {
     exclude: ['lucide-react'],
@@ -11,6 +10,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
+    assetsDir: 'assets',
     rollupOptions: {
       output: {
         manualChunks: {
@@ -19,6 +19,9 @@ export default defineConfig({
         },
       },
     },
+  },
+  css: {
+    postcss: './postcss.config.js',
   },
   define: {
     'process.env': {},
