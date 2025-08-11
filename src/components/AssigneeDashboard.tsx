@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase, supabaseAdmin, Assignment } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { Clock, CheckCircle, Upload, X } from 'lucide-react';
+import { Clock, CheckCircle, Upload, X, Users } from 'lucide-react';
 import { TaskStatusDisplay } from './TaskStatusDisplay';
 
 export function AssigneeDashboard() {
@@ -12,7 +12,7 @@ export function AssigneeDashboard() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showStatusDisplay, setShowStatusDisplay] = useState(false);
-  const [statusData, setStatusData] = useState<unknown>(null);
+  const [statusData, setStatusData] = useState<any>(null);
   const { profile } = useAuth();
 
   const loadAssignments = useCallback(async () => {
@@ -42,7 +42,7 @@ export function AssigneeDashboard() {
   const handleEvidenceUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     const maxFileSize = 100 * 1024 * 1024; // 100MB in bytes
-    
+
     // Filter out files that are too large
     const validFiles = files.filter(file => {
       if (file.size > maxFileSize) {
@@ -51,11 +51,11 @@ export function AssigneeDashboard() {
       }
       return true;
     });
-    
+
     if (validFiles.length > 0) {
       setEvidenceFiles(prev => [...prev, ...validFiles].slice(0, 3));
     }
-    
+
     // Reset the input value so the same file can be selected again if needed
     e.target.value = '';
   };
@@ -78,8 +78,8 @@ export function AssigneeDashboard() {
             // Create unique filename with timestamp and random string
             const fileExt = file.name.split('.').pop();
             const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-            
-            const { data, error } = await supabase.storage
+
+            const { error } = await supabase.storage
               .from('evidence-files')
               .upload(fileName, file, {
                 cacheControl: '3600',
@@ -175,8 +175,8 @@ export function AssigneeDashboard() {
             // Create unique filename with timestamp and random string
             const fileExt = file.name.split('.').pop();
             const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-            
-            const { data, error } = await supabase.storage
+
+            const { error } = await supabase.storage
               .from('evidence-files')
               .upload(fileName, file, {
                 cacheControl: '3600',
@@ -186,15 +186,15 @@ export function AssigneeDashboard() {
             if (error) {
               console.warn('⚠️ Could not upload evidence file:', error);
               console.warn('Error details:', {
-                message: error.message,
-                statusCode: error.statusCode,
-                error: error.error
+                message: (error as any).message,
+                statusCode: (error as any).statusCode,
+                error: (error as unknown).error
               });
               // Continue without this file
               continue;
             }
 
-            console.log('Evidence file uploaded successfully:', data);
+            console.log('Evidence file uploaded successfully');
 
             const { data: { publicUrl } } = supabase.storage
               .from('evidence-files')
@@ -280,7 +280,7 @@ export function AssigneeDashboard() {
 
   const showTaskStatus = (assignment: Assignment) => {
     let status: 'approved' | 'rejected' | 'pending' | 'completed' = 'pending';
-    
+
     if (assignment.review_status === 'approved') {
       status = 'approved';
     } else if (assignment.review_status === 'rejected') {
@@ -321,8 +321,8 @@ export function AssigneeDashboard() {
   }
 
   if (selectedAssignment) {
-      return (
-    <div className="p-4">
+    return (
+      <div className="p-4">
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="flex items-center justify-between mb-6">
@@ -445,14 +445,13 @@ export function AssigneeDashboard() {
                 <button
                   onClick={selectedAssignment.review_status === 'rejected' ? handleResubmitTask : handleSubmitCompletion}
                   disabled={submitting}
-                  className={`px-6 py-2 text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
-                    selectedAssignment.review_status === 'rejected' 
-                      ? 'bg-orange-600 hover:bg-orange-700' 
-                      : 'bg-blue-600 hover:bg-blue-700'
-                  }`}
+                  className={`px-6 py-2 text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${selectedAssignment.review_status === 'rejected'
+                    ? 'bg-orange-600 hover:bg-orange-700'
+                    : 'bg-blue-600 hover:bg-blue-700'
+                    }`}
                 >
-                  {submitting 
-                    ? (selectedAssignment.review_status === 'rejected' ? 'Resubmitting...' : 'Submitting...') 
+                  {submitting
+                    ? (selectedAssignment.review_status === 'rejected' ? 'Resubmitting...' : 'Submitting...')
                     : (selectedAssignment.review_status === 'rejected' ? 'Resubmit Task' : 'Submit Completion')
                   }
                 </button>
@@ -467,9 +466,18 @@ export function AssigneeDashboard() {
   return (
     <div className="p-4">
       <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">My Assignments</h1>
-          <p className="text-gray-600">Complete assigned safety tasks</p>
+        <div className="card mb-8 animate-slide-in">
+          <div className="card-header">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-purple-700 rounded-xl flex items-center justify-center">
+                <Users className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gradient">My Assignments</h1>
+                <p className="text-slate-600">Complete assigned safety tasks and submit evidence</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {loading ? (
@@ -484,11 +492,12 @@ export function AssigneeDashboard() {
             <p className="text-gray-600">You don't have any assignments yet</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {assignments.map((assignment) => (
+          <div className="grid gap-6 animate-fade-in">
+            {assignments.map((assignment, index) => (
               <div
                 key={assignment.id}
-                className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
+                className="card hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]"
+                style={{ animationDelay: `${index * 100}ms` }}
               >
                 <div className="flex justify-between items-start mb-4">
                   <div>
@@ -520,10 +529,9 @@ export function AssigneeDashboard() {
                       </div>
                     )}
                     {assignment.review_status && (
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        assignment.review_status === 'approved'
-                          ? 'bg-green-100 text-green-800'
-                          : assignment.review_status === 'rejected'
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${assignment.review_status === 'approved'
+                        ? 'bg-green-100 text-green-800'
+                        : assignment.review_status === 'rejected'
                           ? 'bg-red-100 text-red-800'
                           : 'bg-yellow-100 text-yellow-800'
                         }`}>
