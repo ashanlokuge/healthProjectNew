@@ -4,9 +4,11 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Login } from './components/Login';
 import { MainDashboard } from './components/MainDashboard';
 import { DeveloperMode } from './components/DeveloperMode';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { DebugInfo } from './components/DebugInfo';
 
 function AppContent() {
-  const { user, profile, loading, signOut, isDeveloper, currentRole } = useAuth();
+  const { user, profile, loading, isDeveloper, currentRole } = useAuth();
 
   console.log('🎯 AppContent Debug:', {
     user: user?.id,
@@ -44,11 +46,14 @@ function AppContent() {
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
-    </Router>
+    <ErrorBoundary>
+      <Router>
+        <AuthProvider>
+          <AppContent />
+          {import.meta.env.DEV && <DebugInfo />}
+        </AuthProvider>
+      </Router>
+    </ErrorBoundary>
   );
 }
 

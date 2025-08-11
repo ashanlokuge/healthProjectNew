@@ -3,6 +3,28 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+// Debug environment variables in development
+if (import.meta.env.DEV) {
+  console.log('🔧 Environment Variables Debug:', {
+    VITE_SUPABASE_URL: supabaseUrl ? 'Set' : 'Missing',
+    VITE_SUPABASE_ANON_KEY: supabaseAnonKey ? 'Set' : 'Missing',
+    NODE_ENV: import.meta.env.MODE,
+  });
+}
+
+// Validate required environment variables
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('❌ Missing required environment variables:', {
+    VITE_SUPABASE_URL: supabaseUrl,
+    VITE_SUPABASE_ANON_KEY: supabaseAnonKey ? 'Set' : 'Missing',
+  });
+  
+  // In production, show a user-friendly error
+  if (import.meta.env.PROD) {
+    throw new Error('Application configuration error. Please contact support.');
+  }
+}
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Service role client for admin operations (bypasses RLS)
