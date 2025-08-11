@@ -464,122 +464,210 @@ export function AssigneeDashboard() {
   }
 
   return (
-    <div className="p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-indigo-100">
       <div className="max-w-7xl mx-auto">
-        <div className="card mb-8 animate-slide-in">
-          <div className="card-header">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-purple-700 rounded-xl flex items-center justify-center">
-                <Users className="w-6 h-6 text-white" />
+        {/* Modern Header */}
+        <div className="bg-white/90 backdrop-blur-lg border-b border-slate-200/50 shadow-lg mb-8">
+          <div className="max-w-7xl mx-auto px-6 py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="relative">
+                  <div className="w-16 h-16 bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-700 rounded-2xl flex items-center justify-center shadow-xl">
+                    <Users className="w-8 h-8 text-white" />
+                  </div>
+                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
+                    <CheckCircle className="w-3 h-3 text-white" />
+                  </div>
+                </div>
+                <div>
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 bg-clip-text text-transparent">
+                    My Assignments
+                  </h1>
+                  <p className="text-slate-600 text-lg font-medium">Complete assigned safety tasks and submit evidence</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-3xl font-bold text-gradient">My Assignments</h1>
-                <p className="text-slate-600">Complete assigned safety tasks and submit evidence</p>
+              <div className="flex items-center space-x-3">
+                <div className="px-4 py-2 bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-700 rounded-full text-sm font-semibold border border-purple-200">
+                  🎯 Active Assignee
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {loading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="text-gray-600 mt-4">Loading assignments...</p>
-          </div>
-        ) : assignments.length === 0 ? (
-          <div className="text-center py-12">
-            <CheckCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No assignments</h3>
-            <p className="text-gray-600">You don't have any assignments yet</p>
-          </div>
-        ) : (
-          <div className="grid gap-6 animate-fade-in">
-            {assignments.map((assignment, index) => (
-              <div
-                key={assignment.id}
-                className="card hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      {assignment.hazard_reports?.hazard_title}
-                    </h3>
-                    <p className="text-gray-600 mt-1">{assignment.action}</p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Clock className={`w-4 h-4 ${isOverdue(assignment.target_completion_date) ? 'text-red-500' : 'text-gray-400'}`} />
-                    <span className={`text-sm ${isOverdue(assignment.target_completion_date) ? 'text-red-600 font-medium' : 'text-gray-600'}`}>
-                      Due: {new Date(assignment.target_completion_date).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-
-                {assignment.remark && (
-                  <p className="text-gray-700 mb-4 bg-gray-50 p-3 rounded-md">
-                    <span className="font-medium">Remark:</span> {assignment.remark}
-                  </p>
-                )}
-
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center space-x-4">
-                    {assignment.completed_at && (
-                      <div className="flex items-center space-x-1 text-green-600">
-                        <CheckCircle className="w-4 h-4" />
-                        <span className="text-sm">Completed</span>
-                      </div>
-                    )}
-                    {assignment.review_status && (
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${assignment.review_status === 'approved'
-                        ? 'bg-green-100 text-green-800'
-                        : assignment.review_status === 'rejected'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                        {assignment.review_status.toUpperCase()}
-                      </span>
-                    )}
-                    {assignment.review_status === 'rejected' && assignment.review_reason && (
-                      <span className="text-sm text-red-600">
-                        Reason: {assignment.review_reason}
-                      </span>
-                    )}
-                  </div>
-
-                  {!assignment.completed_at ? (
-                    <button
-                      onClick={() => setSelectedAssignment(assignment)}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm"
-                    >
-                      Complete Task
-                    </button>
-                  ) : assignment.review_status === 'rejected' ? (
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => showTaskStatus(assignment)}
-                        className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors text-sm"
-                      >
-                        View Status
-                      </button>
-                      <button
-                        onClick={() => setSelectedAssignment(assignment)}
-                        className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition-colors text-sm"
-                      >
-                        Resubmit Task
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => showTaskStatus(assignment)}
-                      className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors text-sm"
-                    >
-                      View Status
-                    </button>
-                  )}
-                </div>
+        <div className="px-6 pb-8">
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="text-center">
+                <div className="w-16 h-16 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-slate-600 text-lg font-medium">Loading your assignments...</p>
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          ) : assignments.length === 0 ? (
+            <div className="text-center py-20">
+              <div className="w-24 h-24 bg-gradient-to-br from-purple-100 to-purple-200 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                <CheckCircle className="w-12 h-12 text-purple-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-slate-900 mb-2">No Assignments Yet</h3>
+              <p className="text-slate-600 text-lg">You don't have any assignments at the moment</p>
+            </div>
+          ) : (
+            <div className="space-y-6 animate-fade-in">
+              {assignments.map((assignment, index) => (
+                <div
+                  key={assignment.id}
+                  className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-slate-200/50 hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02]"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  {/* Assignment Header */}
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="flex items-start space-x-4">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${assignment.review_status === 'approved'
+                          ? 'bg-gradient-to-br from-green-500 to-green-600'
+                          : assignment.review_status === 'rejected'
+                            ? 'bg-gradient-to-br from-red-500 to-red-600'
+                            : assignment.completed_at
+                              ? 'bg-gradient-to-br from-blue-500 to-blue-600'
+                              : 'bg-gradient-to-br from-purple-500 to-purple-600'
+                        }`}>
+                        {assignment.review_status === 'approved' ? (
+                          <CheckCircle className="w-6 h-6 text-white" />
+                        ) : assignment.review_status === 'rejected' ? (
+                          <X className="w-6 h-6 text-white" />
+                        ) : assignment.completed_at ? (
+                          <Clock className="w-6 h-6 text-white" />
+                        ) : (
+                          <Users className="w-6 h-6 text-white" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold text-slate-900 mb-1">
+                          {assignment.hazard_reports?.hazard_title || 'Untitled Assignment'}
+                        </h3>
+                        <p className="text-slate-600 text-sm mb-2">
+                          📋 {assignment.action}
+                        </p>
+                        <div className="flex items-center space-x-4 text-sm text-slate-500">
+                          <div className="flex items-center space-x-1">
+                            <Clock className="w-4 h-4" />
+                            <span>Due: {new Date(assignment.target_completion_date).toLocaleDateString()}</span>
+                          </div>
+                          {assignment.completed_at && (
+                            <div className="flex items-center space-x-1 text-green-600">
+                              <CheckCircle className="w-4 h-4" />
+                              <span>Completed: {new Date(assignment.completed_at).toLocaleDateString()}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Status Badge */}
+                    <div className="flex flex-col items-end space-y-2">
+                      {isOverdue(assignment.target_completion_date) && !assignment.completed_at && (
+                        <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold border border-red-200">
+                          🚨 OVERDUE
+                        </span>
+                      )}
+                      {assignment.review_status && (
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${assignment.review_status === 'approved'
+                            ? 'bg-green-100 text-green-700 border-green-200'
+                            : assignment.review_status === 'rejected'
+                              ? 'bg-red-100 text-red-700 border-red-200'
+                              : 'bg-yellow-100 text-yellow-700 border-yellow-200'
+                          }`}>
+                          {assignment.review_status === 'approved' ? '✅ APPROVED' :
+                            assignment.review_status === 'rejected' ? '❌ REJECTED' :
+                              '⏳ PENDING'}
+                        </span>
+                      )}
+                      {assignment.completed_at && !assignment.review_status && (
+                        <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold border border-blue-200">
+                          ⏰ AWAITING REVIEW
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Remark Section */}
+                  {assignment.remark && (
+                    <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                      <div className="flex items-start space-x-2">
+                        <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center mt-0.5">
+                          <span className="text-white text-xs">💬</span>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold text-blue-900 mb-1">Reviewer's Note</h4>
+                          <p className="text-blue-800 text-sm">{assignment.remark}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Rejection Reason */}
+                  {assignment.review_status === 'rejected' && assignment.review_reason && (
+                    <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl">
+                      <div className="flex items-start space-x-2">
+                        <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center mt-0.5">
+                          <X className="w-3 h-3 text-white" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold text-red-900 mb-1">Rejection Reason</h4>
+                          <p className="text-red-800 text-sm">{assignment.review_reason}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex justify-between items-center pt-4 border-t border-slate-200">
+                    <div className="flex items-center space-x-3">
+                      {assignment.completed_at && (
+                        <div className="flex items-center space-x-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                          <CheckCircle className="w-4 h-4" />
+                          <span>Task Completed</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex space-x-3">
+                      {!assignment.completed_at ? (
+                        <button
+                          onClick={() => setSelectedAssignment(assignment)}
+                          className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-2 rounded-xl font-semibold hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                        >
+                          🚀 Complete Task
+                        </button>
+                      ) : assignment.review_status === 'rejected' ? (
+                        <>
+                          <button
+                            onClick={() => showTaskStatus(assignment)}
+                            className="bg-gradient-to-r from-slate-600 to-slate-700 text-white px-4 py-2 rounded-xl font-medium hover:from-slate-700 hover:to-slate-800 transition-all duration-200 shadow-md hover:shadow-lg"
+                          >
+                            👁️ View Status
+                          </button>
+                          <button
+                            onClick={() => setSelectedAssignment(assignment)}
+                            className="bg-gradient-to-r from-orange-600 to-orange-700 text-white px-6 py-2 rounded-xl font-semibold hover:from-orange-700 hover:to-orange-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                          >
+                            🔄 Resubmit Task
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => showTaskStatus(assignment)}
+                          className="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-2 rounded-xl font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                        >
+                          📊 View Status
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

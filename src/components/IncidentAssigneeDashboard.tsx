@@ -406,99 +406,115 @@ export function IncidentAssigneeDashboard() {
   }
 
   return (
-    <div className="p-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">My Incident Assignments</h1>
-          <p className="text-gray-600">Complete assigned incident-related tasks</p>
+    <div className="min-h-screen bg-gray-100">
+      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="px-4 py-6 sm:px-0">
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6 flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
+            <div className="bg-indigo-100 p-3 rounded-full flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-8 h-8 text-indigo-600">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-2.623-4.176 9.263 9.263 0 00-1.186-.08 9.38 9.38 0 00-2.625.372m-10.5-1.122a9.374 9.374 0 01-4.252-1.122 4.125 4.125 0 01-2.623-4.176 9.263 9.263 0 01-1.186-.08 9.38 9.38 0 01-2.625.372m.561-1.122a9.374 9.374 0 00-4.252-1.122 4.125 4.125 0 00-2.623-4.176 9.263 9.263 0 00-1.186-.08 9.38 9.38 0 00-2.625.372" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">My Assignments</h2>
+              <p className="text-gray-600">Complete assigned incident tasks and submit evidence</p>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="text-gray-600 mt-4">Loading assignments...</p>
+            </div>
+          ) : assignments.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-lg shadow-md border border-gray-200">
+              <CheckCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No assignments</h3>
+              <p className="text-gray-600">You don't have any incident assignments yet.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {assignments.map((assignment) => (
+                <div
+                  key={assignment.id}
+                  className="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow duration-200"
+                >
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3">
+                    <div className="mb-2 sm:mb-0">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {assignment.action}
+                      </h3>
+                      {assignment.incident_reports?.incident_title && (
+                        <p className="text-sm text-gray-500 mt-1">
+                          Related to: {assignment.incident_reports.incident_title}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-2 text-sm flex-shrink-0">
+                      <Clock className={`w-4 h-4 ${isOverdue(assignment.target_completion_date) ? 'text-red-500' : 'text-gray-400'}`} />
+                      <span className={`font-medium ${isOverdue(assignment.target_completion_date) ? 'text-red-600' : 'text-gray-600'}`}>
+                        Due: {new Date(assignment.target_completion_date).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {assignment.remark && (
+                    <div className="mb-4 text-gray-700 text-sm">
+                      <span className="font-medium">Remark:</span> {assignment.remark}
+                    </div>
+                  )}
+
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pt-4 border-t border-gray-100 mt-4">
+                    <div className="flex items-center space-x-3 mb-3 sm:mb-0">
+                      {assignment.completed_at && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          <CheckCircle className="w-3 h-3 mr-1" /> Completed
+                        </span>
+                      )}
+                      {assignment.review_status && (
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          assignment.review_status === 'approved'
+                            ? 'bg-green-100 text-green-800'
+                            : assignment.review_status === 'rejected'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                          {assignment.review_status.toUpperCase()}
+                        </span>
+                      )}
+                      {assignment.review_status === 'rejected' && assignment.review_reason && (
+                        <span className="text-sm text-red-600">
+                          Reason: {assignment.review_reason}
+                        </span>
+                      )}
+                    </div>
+
+                    {!assignment.completed_at || assignment.review_status === 'rejected' ? (
+                      <button
+                        onClick={() => setSelectedAssignment(assignment)}
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200
+                          ${assignment.review_status === 'rejected'
+                            ? 'bg-orange-600 text-white hover:bg-orange-700'
+                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                          }`}
+                      >
+                        {assignment.review_status === 'rejected' ? 'Resubmit Task' : 'Complete Task'}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setSelectedAssignment(assignment)}
+                        className="px-4 py-2 rounded-md text-sm font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors duration-200"
+                      >
+                        View Status
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-
-        {loading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="text-gray-600 mt-4">Loading incident assignments...</p>
-          </div>
-        ) : assignments.length === 0 ? (
-          <div className="text-center py-12">
-            <CheckCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No incident assignments</h3>
-            <p className="text-gray-600">You don't have any incident assignments yet</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {assignments.map((assignment) => (
-              <div
-                key={assignment.id}
-                className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      {assignment.incident_reports?.incident_title || 'Untitled Incident'}
-                    </h3>
-                    <p className="text-gray-600 mt-1">{assignment.action}</p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Clock className={`w-4 h-4 ${isOverdue(assignment.target_completion_date) ? 'text-red-500' : 'text-gray-400'}`} />
-                    <span className={`text-sm ${isOverdue(assignment.target_completion_date) ? 'text-red-600 font-medium' : 'text-gray-600'}`}>
-                      Due: {new Date(assignment.target_completion_date).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-
-                {assignment.remark && (
-                  <p className="text-gray-700 mb-4 bg-gray-50 p-3 rounded-md">
-                    <span className="font-medium">Remark:</span> {assignment.remark}
-                  </p>
-                )}
-
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center space-x-4">
-                    {assignment.completed_at && (
-                      <div className="flex items-center space-x-1 text-green-600">
-                        <CheckCircle className="w-4 h-4" />
-                        <span className="text-sm">Completed</span>
-                      </div>
-                    )}
-                    {assignment.review_status && (
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        assignment.review_status === 'approved'
-                          ? 'bg-green-100 text-green-800'
-                          : assignment.review_status === 'rejected'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                        {assignment.review_status.toUpperCase()}
-                      </span>
-                    )}
-                    {assignment.review_status === 'rejected' && assignment.review_reason && (
-                      <span className="text-sm text-red-600">
-                        Reason: {assignment.review_reason}
-                      </span>
-                    )}
-                  </div>
-
-                  {!assignment.completed_at ? (
-                    <button
-                      onClick={() => setSelectedAssignment(assignment)}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm"
-                    >
-                      Complete Task
-                    </button>
-                  ) : assignment.review_status === 'rejected' ? (
-                    <button
-                      onClick={() => setSelectedAssignment(assignment)}
-                      className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition-colors text-sm"
-                    >
-                      Resubmit Task
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      </main>
     </div>
   );
 }
