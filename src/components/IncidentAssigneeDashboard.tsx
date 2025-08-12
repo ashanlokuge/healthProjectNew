@@ -117,14 +117,27 @@ export function IncidentAssigneeDashboard() {
               .getPublicUrl(fileName);
 
             // Store evidence record
-            await supabaseAdmin
-              .from('evidences')
-              .insert([{
-                assignment_id: selectedAssignment.id,
-                file_name: file.name,
-                file_url: publicUrl,
-                uploaded_at: new Date().toISOString()
-              }]);
+            try {
+              const { data: evidenceData, error: evidenceError } = await supabaseAdmin
+                .from('incident_evidences')
+                .insert([{
+                  incident_assignment_id: selectedAssignment.id,
+                  file_name: file.name,
+                  file_url: publicUrl,
+                  file_type: file.type,
+                  uploaded_at: new Date().toISOString()
+                }]);
+
+              if (evidenceError) {
+                console.warn('⚠️ Could not save evidence record:', evidenceError);
+                // Continue without saving evidence record
+              } else {
+                console.log('✅ Evidence record saved successfully:', evidenceData);
+              }
+            } catch (evidenceError) {
+              console.warn('⚠️ Could not save evidence record:', evidenceError);
+              // Continue without saving evidence record
+            }
           }
         } catch (error) {
           console.error('Error uploading evidence files:', error);
@@ -136,12 +149,24 @@ export function IncidentAssigneeDashboard() {
         .from('incident_assignments')
         .update({
           completed_at: completionDate,
-          review_status: 'submitted',
+          review_status: 'pending', // Set to pending for review
           review_reason: null
         })
         .eq('id', selectedAssignment.id);
 
       if (updateError) throw updateError;
+
+      // Update incident report status to 'in_review' for resubmission
+      const { error: reportUpdateError } = await supabaseAdmin
+        .from('incident_reports')
+        .update({ status: 'in_review' })
+        .eq('id', selectedAssignment.incident_report_id);
+
+      if (reportUpdateError) {
+        console.warn('⚠️ Could not update incident report status:', reportUpdateError);
+      } else {
+        console.log('✅ Incident report status updated to in_review for resubmission');
+      }
 
       alert('Incident task resubmitted successfully!');
       setSelectedAssignment(null);
@@ -186,25 +211,39 @@ export function IncidentAssigneeDashboard() {
               .getPublicUrl(fileName);
 
             // Store evidence record
-            await supabaseAdmin
-              .from('evidences')
-              .insert([{
-                assignment_id: selectedAssignment.id,
-                file_name: file.name,
-                file_url: publicUrl,
-                uploaded_at: new Date().toISOString()
-              }]);
+            try {
+              const { data: evidenceData, error: evidenceError } = await supabaseAdmin
+                .from('incident_evidences')
+                .insert([{
+                  incident_assignment_id: selectedAssignment.id,
+                  file_name: file.name,
+                  file_url: publicUrl,
+                  file_type: file.type,
+                  uploaded_at: new Date().toISOString()
+                }]);
+
+              if (evidenceError) {
+                console.warn('⚠️ Could not save evidence record:', evidenceError);
+                // Continue without saving evidence record
+              } else {
+                console.log('✅ Evidence record saved successfully:', evidenceData);
+              }
+            } catch (evidenceError) {
+              console.warn('⚠️ Could not save evidence record:', evidenceError);
+              // Continue without saving evidence record
+            }
           }
         } catch (error) {
           console.error('Error uploading evidence files:', error);
         }
       }
 
-      // Update assignment status (don't set review_status, let reviewer handle it)
+      // Update assignment status to indicate it's ready for review
       const { data, error: updateError } = await supabaseAdmin
         .from('incident_assignments')
         .update({
-          completed_at: completionDate
+          completed_at: completionDate,
+          review_status: 'pending' // Set to pending so reviewer knows it needs review
         })
         .eq('id', selectedAssignment.id)
         .select()
@@ -213,6 +252,19 @@ export function IncidentAssigneeDashboard() {
       if (updateError) {
         console.error('❌ Database error:', updateError);
         throw new Error(`Database error: ${updateError.message}`);
+      }
+
+      // Update incident report status to 'in_review' to indicate it's ready for reviewer approval
+      const { error: reportUpdateError } = await supabaseAdmin
+        .from('incident_reports')
+        .update({ status: 'in_review' })
+        .eq('id', selectedAssignment.incident_report_id);
+
+      if (reportUpdateError) {
+        console.warn('⚠️ Could not update incident report status:', reportUpdateError);
+        // Continue anyway since the assignment was updated successfully
+      } else {
+        console.log('✅ Incident report status updated to in_review');
       }
 
       console.log('✅ Incident task completed successfully:', data);

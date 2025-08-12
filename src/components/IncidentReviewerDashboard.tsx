@@ -53,6 +53,15 @@ interface IncidentAssignment {
   };
 }
 
+interface Evidence {
+  id: string;
+  assignment_id: string;
+  file_url: string;
+  file_name: string;
+  file_type?: string;
+  uploaded_at: string;
+}
+
 export function IncidentReviewerDashboard() {
   const [activeTab, setActiveTab] = useState<'reports' | 'assignments' | 'pending_review' | 'review_history'>('reports');
   const [reports, setReports] = useState<IncidentReport[]>([]);
@@ -64,49 +73,40 @@ export function IncidentReviewerDashboard() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [reviewReason, setReviewReason] = useState('');
-  const [assignees, setAssignees] = useState<{id: string, full_name: string, email: string}[]>([]);
-  const [filteredAssignees, setFilteredAssignees] = useState<{id: string, full_name: string, email: string}[]>([]);
+  const [assignees, setAssignees] = useState<{ id: string, full_name: string, email: string }[]>([]);
+  const [filteredAssignees, setFilteredAssignees] = useState<{ id: string, full_name: string, email: string }[]>([]);
   const [emailSearch, setEmailSearch] = useState('');
   const [selectedAssigneeId, setSelectedAssigneeId] = useState('');
-  const { profile } = useAuth();
+  const [evidenceFiles, setEvidenceFiles] = useState<Evidence[]>([]);
+  const [loadingEvidence, setLoadingEvidence] = useState(false);
+  const { user, profile } = useAuth();
 
   const loadData = useCallback(async () => {
     try {
-      console.log('🔍 Loading incident data for reviewer...');
-      
+
       // Load unassigned incident reports
       const { data: reportsData, error: reportsError } = await supabase
         .from('incident_reports')
-        .select(`
-          *,
-          profiles (full_name, email)
-        `)
+        .select('*')
         .eq('status', 'submitted')
         .order('created_at', { ascending: false });
 
       if (reportsError) throw reportsError;
 
-      console.log('📊 Incident reports query result:', { reportsData, reportsError });
 
-      // Load incident assignments created by this reviewer (exclude approved/rejected tasks)
+
+      // Load incident assignments created by this reviewer (exclude approved/rejected and pending review tasks)
       const { data: assignmentsData, error: assignmentsError } = await supabase
         .from('incident_assignments')
         .select(`
           *,
-          incident_reports (*),
-          profiles!incident_assignments_assignee_id_fkey(full_name, email)
+          incident_reports (*)
         `)
-        .eq('reviewer_id', profile?.id)
-        .not('review_status', 'in', '("approved","rejected")')
+        .eq('reviewer_id', user?.id)
+        .not('review_status', 'in', '("approved","rejected","pending")')
         .order('created_at', { ascending: false });
 
-      console.log('📊 Incident assignments query result:', { assignmentsData, assignmentsError });
-      console.log('📊 Assignment review statuses:', assignmentsData?.map(a => ({ 
-        id: a.id, 
-        title: a.incident_reports?.incident_title, 
-        review_status: a.review_status,
-        completed_at: a.completed_at 
-      })));
+
 
       if (assignmentsError) throw assignmentsError;
 
@@ -115,15 +115,14 @@ export function IncidentReviewerDashboard() {
         .from('incident_assignments')
         .select(`
           *,
-          incident_reports (*),
-          profiles!incident_assignments_assignee_id_fkey(full_name, email)
+          incident_reports (*)
         `)
-        .eq('reviewer_id', profile?.id)
+        .eq('reviewer_id', user?.id)
         .not('completed_at', 'is', null)
-        .is('review_status', null) // Look for completed tasks with no review status (like hazard system)
+        .eq('review_status', 'pending') // Look for completed tasks with pending review status
         .order('completed_at', { ascending: false });
 
-      console.log('📊 Pending review query result:', { pendingReviewData, pendingReviewError });
+
 
       if (pendingReviewError) throw pendingReviewError;
 
@@ -132,14 +131,13 @@ export function IncidentReviewerDashboard() {
         .from('incident_assignments')
         .select(`
           *,
-          incident_reports (*),
-          profiles!incident_assignments_assignee_id_fkey(full_name, email)
+          incident_reports (*)
         `)
-        .eq('reviewer_id', profile?.id)
+        .eq('reviewer_id', user?.id)
         .in('review_status', ['approved', 'rejected'])
         .order('created_at', { ascending: false });
 
-      console.log('📊 Reviewed tasks query result:', { reviewedData, reviewedError });
+
 
       if (reviewedError) throw reviewedError;
 
@@ -147,49 +145,33 @@ export function IncidentReviewerDashboard() {
       setAssignments(assignmentsData || []);
       setPendingReviewTasks(pendingReviewData || []);
       setReviewedTasks(reviewedData || []);
-      
-      console.log('✅ Set reports:', reportsData?.length || 0);
-      console.log('✅ Set assignments:', assignmentsData?.length || 0);
-      console.log('✅ Set pending review tasks:', pendingReviewData?.length || 0);
-      console.log('✅ Set reviewed tasks:', reviewedData?.length || 0);
+
+
     } catch (error) {
-      console.error('❌ Error loading data:', error);
-      console.error('❌ Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
-      });
+      console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
-  }, [profile?.id]);
-
-  useEffect(() => {
-    if (profile?.id) {
-      loadData();
-    }
-  }, [profile?.id, loadData]);
+  }, [user?.id]);
 
   const loadAssignees = useCallback(async () => {
     try {
-      console.log('🔍 Loading assignees for incident assignment...');
-      
+
+
       const { data: allProfiles, error: allError } = await supabase
         .from('profiles')
         .select('*');
-      
+
       if (allError) {
         console.error('❌ Error loading all profiles:', allError);
         setAssignees([]);
         setFilteredAssignees([]);
         return;
       }
-      
+
       if (allProfiles) {
-        console.log('📊 Total profiles found:', allProfiles.length);
-        
         const assigneeProfiles = allProfiles.filter(p => p.role === 'assignee');
-        console.log('📊 Assignee profiles found:', assigneeProfiles);
-        
+
         setAssignees(assigneeProfiles);
         setFilteredAssignees(assigneeProfiles);
       }
@@ -200,12 +182,50 @@ export function IncidentReviewerDashboard() {
     }
   }, []);
 
+  const loadEvidence = useCallback(async (assignmentId: string) => {
+    try {
+      console.log('🔍 Loading evidence for incident assignment:', assignmentId);
+      const { data, error } = await supabase
+        .from('incident_evidences')
+        .select('*')
+        .eq('incident_assignment_id', assignmentId);
+
+      console.log('📊 Evidence query result:', { data, error });
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('❌ Error loading evidence:', error);
+      return [];
+    }
+  }, []);
+
   useEffect(() => {
     if (profile?.id) {
       loadData();
       loadAssignees();
     }
   }, [profile?.id, loadData, loadAssignees]);
+
+  // Load evidence when an assignment is selected for review
+  useEffect(() => {
+    const loadEvidenceForAssignment = async () => {
+      if (selectedAssignment?.id) {
+        setLoadingEvidence(true);
+        try {
+          const evidence = await loadEvidence(selectedAssignment.id);
+          setEvidenceFiles(evidence);
+          console.log('✅ Loaded evidence files for incident assignment:', evidence);
+        } catch (error) {
+          console.error('❌ Error loading evidence:', error);
+          setEvidenceFiles([]);
+        } finally {
+          setLoadingEvidence(false);
+        }
+      }
+    };
+
+    loadEvidenceForAssignment();
+  }, [selectedAssignment?.id, loadEvidence]);
 
   useEffect(() => {
     if (!emailSearch.trim()) {
@@ -229,47 +249,43 @@ export function IncidentReviewerDashboard() {
 
     setSubmitting(true);
     try {
-      console.log('📋 Assigning incident report to assignee:', selectedReport.id, 'Assignee:', selectedAssigneeId);
-      
+
+
       // First, update the report status to 'assigned'
-      const { data: reportData, error: reportError } = await supabase
+      const { error: reportError } = await supabase
         .from('incident_reports')
         .update({ status: 'assigned' })
-        .eq('id', selectedReport.id)
-        .select()
-        .single();
+        .eq('id', selectedReport.id);
 
       if (reportError) {
         console.error('❌ Database error updating report:', reportError);
         throw new Error(`Database error: ${reportError.message}`);
       }
 
-      // Current user's profile ID is available from the useAuth hook
-      if (!profile?.id) {
-        throw new Error('Reviewer profile ID is not available.');
+      // Current user's ID is available from the useAuth hook
+      if (!user?.id) {
+        throw new Error('User ID is not available.');
       }
 
       // Create an assignment for the assignee
-      const { data: assignmentData, error: assignmentError } = await supabase
+      const { error: assignmentError } = await supabase
         .from('incident_assignments')
         .insert([{
           incident_report_id: selectedReport.id,
-          reviewer_id: profile.id, // Use profile.id directly
+          reviewer_id: profile?.id, // Use profile.id for profiles reference
           assignee_id: selectedAssigneeId,
           action: 'Investigate and resolve the incident',
           target_completion_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days from now
           review_status: 'pending',
           remark: 'Please investigate this incident and provide a detailed report.'
-        }])
-        .select()
-        .single();
+        }]);
 
       if (assignmentError) {
         console.error('❌ Database error creating assignment:', assignmentError);
         throw new Error(`Database error: ${assignmentError.message}`);
       }
 
-      console.log('✅ Incident report assigned successfully:', { reportData, assignmentData });
+
       alert('Incident report assigned to assignee successfully!');
       setSelectedReport(null);
       setSelectedAssigneeId('');
@@ -289,16 +305,12 @@ export function IncidentReviewerDashboard() {
 
     setSubmitting(true);
     try {
-      console.log('✅ Approving incident assignment:', selectedAssignment.id);
-      
       const updateData = {
         review_status: 'approved',
         review_reason: reviewReason,
         reviewed_at: new Date().toISOString(),
       };
-      
-      console.log('📝 Update data:', updateData);
-      
+
       const { data, error } = await supabase
         .from('incident_assignments')
         .update(updateData)
@@ -316,7 +328,7 @@ export function IncidentReviewerDashboard() {
         });
         throw error;
       }
-      
+
       console.log('✅ Assignment updated successfully:', data);
 
       // Update incident report status
@@ -349,16 +361,12 @@ export function IncidentReviewerDashboard() {
 
     setSubmitting(true);
     try {
-      console.log('❌ Rejecting incident assignment:', selectedAssignment.id, 'Reason:', reviewReason);
-      
       const updateData = {
         review_status: 'rejected',
         review_reason: reviewReason,
         reviewed_at: new Date().toISOString(),
       };
-      
-      console.log('📝 Update data:', updateData);
-      
+
       const { data, error } = await supabase
         .from('incident_assignments')
         .update(updateData)
@@ -376,7 +384,7 @@ export function IncidentReviewerDashboard() {
         });
         throw error;
       }
-      
+
       console.log('✅ Assignment updated successfully:', data);
 
       // Update incident report status
@@ -645,6 +653,37 @@ export function IncidentReviewerDashboard() {
               />
             </div>
 
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Evidence Files</h3>
+              {loadingEvidence ? (
+                <div className="text-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="text-gray-600 mt-2">Loading evidence files...</p>
+                </div>
+              ) : evidenceFiles.length === 0 ? (
+                <p className="text-gray-600">No evidence files uploaded for this assignment.</p>
+              ) : (
+                <div className="grid gap-4">
+                  {evidenceFiles.map((file) => (
+                    <div key={file.id} className="bg-gray-50 p-3 rounded-md flex items-center justify-between">
+                      <div className="flex items-center">
+                        <FileText className="w-5 h-5 text-gray-500 mr-2" />
+                        <a
+                          href={file.file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          {file.file_name}
+                        </a>
+                      </div>
+                      <span className="text-xs text-gray-500">{new Date(file.uploaded_at).toLocaleDateString()}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="flex justify-end space-x-4">
               <button
                 onClick={() => setSelectedAssignment(null)}
@@ -698,48 +737,44 @@ export function IncidentReviewerDashboard() {
       <div className="max-w-7xl mx-auto">
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Incident Reviewer Dashboard</h1>
-          
+
           <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
             <button
               onClick={() => setActiveTab('reports')}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                activeTab === 'reports'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${activeTab === 'reports'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+                }`}
             >
               <FileText className="w-4 h-4 inline mr-2" />
               New Reports ({reports.length})
             </button>
             <button
               onClick={() => setActiveTab('assignments')}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                activeTab === 'assignments'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${activeTab === 'assignments'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+                }`}
             >
               <Users className="w-4 h-4 inline mr-2" />
               My Assignments ({assignments.length})
             </button>
             <button
               onClick={() => setActiveTab('pending_review')}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                activeTab === 'pending_review'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${activeTab === 'pending_review'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+                }`}
             >
               <Clock className="w-4 h-4 inline mr-2" />
               Tasks to Review ({pendingReviewTasks.length})
             </button>
             <button
               onClick={() => setActiveTab('review_history')}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                activeTab === 'review_history'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${activeTab === 'review_history'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+                }`}
             >
               <Eye className="w-4 h-4 inline mr-2" />
               Review History ({reviewedTasks.length})
@@ -774,18 +809,18 @@ export function IncidentReviewerDashboard() {
                           {report.status.toUpperCase()}
                         </span>
                       </div>
-                      
+
                       <div className="space-y-2 text-sm text-gray-600">
                         <p><strong>Site:</strong> {report.site || 'Not specified'}</p>
                         <p><strong>Department:</strong> {report.department || 'Not specified'}</p>
                         <p><strong>Category:</strong> {report.incident_category || 'Not specified'}</p>
                         <p><strong>Severity:</strong> {report.severity_level || 'Not specified'}</p>
                       </div>
-                      
+
                       <p className="text-gray-700 mt-3 text-sm line-clamp-2">{report.description}</p>
-                      
+
                       <div className="mt-4 pt-4 border-t border-gray-200">
-                        <button 
+                        <button
                           onClick={() => setSelectedReport(report)}
                           className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                         >
@@ -924,11 +959,10 @@ export function IncidentReviewerDashboard() {
                           <p className="text-gray-600 mt-1">{assignment.action}</p>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            assignment.review_status === 'approved'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${assignment.review_status === 'approved'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                            }`}>
                             {assignment.review_status?.toUpperCase()}
                           </span>
                         </div>

@@ -3,20 +3,10 @@ import { BrowserRouter as Router } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Login } from './components/Login';
 import { MainDashboard } from './components/MainDashboard';
-import { DeveloperMode } from './components/DeveloperMode';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 function AppContent() {
-  const { user, profile, loading, isDeveloper, currentRole } = useAuth();
-
-  console.log('🎯 AppContent Debug:', {
-    user: user?.id,
-    profile: profile?.id,
-    loading,
-    isDeveloper,
-    currentRole,
-    profileRole: profile?.role
-  });
+  const { user, profile, loading } = useAuth();
 
   if (loading) {
     return (
@@ -29,16 +19,9 @@ function AppContent() {
     );
   }
 
-  if (isDeveloper) {
-    return <DeveloperMode />;
-  }
-
   if (!user || !profile) {
-    console.log('🚫 No user or profile, showing login');
     return <Login />;
   }
-
-  console.log('✅ User and profile found, rendering dashboard');
 
   return <MainDashboard />;
 }

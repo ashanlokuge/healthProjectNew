@@ -4,7 +4,7 @@ import { HazardReporting } from './HazardReporting';
 import { IncidentReporting } from './IncidentReporting';
 import SOTReportingForm from './SOTReportingForm'; // Import the new component
 import LicenseManagement from './LicenseManagement'; // Import the License Management component
-import { LogOut, AlertTriangle, FileText, Shield, Clock, UserCheck, CheckCircle, Settings, User, Bell } from 'lucide-react';
+import { LogOut, AlertTriangle, FileText, Shield, Clock, Settings, User, Bell } from 'lucide-react';
 
 type MenuOption = 
   | 'hazard-reporting'
@@ -25,36 +25,33 @@ export function MainDashboard() {
       label: 'Hazard Reporting',
       description: 'Submit and manage hazard reports',
       icon: AlertTriangle,
-      color: 'red',
-      gradient: 'from-red-500 to-red-600',
-      bgColor: 'bg-red-50',
-      borderColor: 'border-red-200',
-      textColor: 'text-red-600',
-      emoji: '⚠️'
+      color: 'blue',
+      gradient: 'from-blue-500 to-blue-600',
+      bgColor: 'bg-blue-50',
+      borderColor: 'border-blue-200',
+      textColor: 'text-blue-600'
     },
     {
       id: 'sot-reporting' as MenuOption,
       label: 'SOT Reporting',
       description: 'Safe Operating Task reporting',
       icon: Shield,
-      color: 'emerald',
-      gradient: 'from-emerald-500 to-emerald-600',
-      bgColor: 'bg-emerald-50',
-      borderColor: 'border-emerald-200',
-      textColor: 'text-emerald-600',
-      emoji: '🛡️'
+      color: 'blue',
+      gradient: 'from-blue-500 to-blue-600',
+      bgColor: 'bg-blue-50',
+      borderColor: 'border-blue-200',
+      textColor: 'text-blue-600'
     },
     {
       id: 'incident-reporting' as MenuOption,
       label: 'Incident Reporting',
       description: 'Report workplace incidents',
       icon: FileText,
-      color: 'orange',
-      gradient: 'from-orange-500 to-orange-600',
-      bgColor: 'bg-orange-50',
-      borderColor: 'border-orange-200',
-      textColor: 'text-orange-600',
-      emoji: '📋'
+      color: 'blue',
+      gradient: 'from-blue-500 to-blue-600',
+      bgColor: 'bg-blue-50',
+      borderColor: 'border-blue-200',
+      textColor: 'text-blue-600'
     },
     {
       id: 'license-documents' as MenuOption,
@@ -65,44 +62,40 @@ export function MainDashboard() {
       gradient: 'from-blue-500 to-blue-600',
       bgColor: 'bg-blue-50',
       borderColor: 'border-blue-200',
-      textColor: 'text-blue-600',
-      emoji: '📄'
+      textColor: 'text-blue-600'
     },
     {
       id: 'employee-man-hours' as MenuOption,
       label: 'Employee Man Hours',
       description: 'Track employee work hours',
       icon: Clock,
-      color: 'purple',
-      gradient: 'from-purple-500 to-purple-600',
-      bgColor: 'bg-purple-50',
-      borderColor: 'border-purple-200',
-      textColor: 'text-purple-600',
-      emoji: '⏰'
+      color: 'blue',
+      gradient: 'from-blue-500 to-blue-600',
+      bgColor: 'bg-blue-50',
+      borderColor: 'border-blue-200',
+      textColor: 'text-blue-600'
     },
     {
       id: 'my-actions' as MenuOption,
       label: 'My Actions',
       description: 'View assigned actions',
-      icon: UserCheck,
-      color: 'indigo',
-      gradient: 'from-indigo-500 to-indigo-600',
-      bgColor: 'bg-indigo-50',
-      borderColor: 'border-indigo-200',
-      textColor: 'text-indigo-600',
-      emoji: '✅'
+      icon: User,
+      color: 'blue',
+      gradient: 'from-blue-500 to-blue-600',
+      bgColor: 'bg-blue-50',
+      borderColor: 'border-blue-200',
+      textColor: 'text-blue-600'
     },
     {
       id: 'action-closing' as MenuOption,
       label: 'Action Closing',
       description: 'Close and audit actions',
-      icon: CheckCircle,
-      color: 'green',
-      gradient: 'from-green-500 to-green-600',
-      bgColor: 'bg-green-50',
-      borderColor: 'border-green-200',
-      textColor: 'text-green-600',
-      emoji: '🎯'
+      icon: Shield,
+      color: 'blue',
+      gradient: 'from-blue-500 to-blue-600',
+      bgColor: 'bg-blue-50',
+      borderColor: 'border-blue-200',
+      textColor: 'text-blue-600'
     }
   ];
 
@@ -173,86 +166,56 @@ export function MainDashboard() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Hero Section */}
-        <div className="text-center mb-16 animate-slide-in">
+        <div className="text-center mb-12 animate-slide-in">
           <div className="inline-flex items-center space-x-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
             <Shield className="w-4 h-4" />
             <span>Workplace Safety Dashboard</span>
           </div>
-          <h2 className="text-5xl font-bold text-slate-900 mb-4">
-            Choose Your <span className="text-gradient">Safety Module</span>
+          <h2 className="text-4xl font-bold text-slate-900 mb-4">
+            Choose Your <span className="text-blue-600">Safety Module</span>
           </h2>
-          <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
             Access comprehensive safety management tools designed to keep your workplace secure and compliant
           </p>
         </div>
 
         {/* Menu Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade-in">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-fade-in">
           {menuOptions.map((option, index) => {
             const IconComponent = option.icon;
             return (
               <button
                 key={option.id}
                 onClick={() => handleMenuClick(option.id)}
-                className={`group card hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-2 p-6 h-56 flex flex-col justify-between ${option.bgColor} border-2 ${option.borderColor} hover:border-opacity-50`}
+                className={`group card hover:shadow-lg transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 p-4 h-40 flex flex-col justify-between ${option.bgColor} border-2 ${option.borderColor} hover:border-opacity-50`}
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <div className="flex-1 flex flex-col justify-center">
-                  {/* Icon and Emoji */}
-                  <div className="flex justify-center mb-4">
-                    <div className={`relative p-4 bg-gradient-to-br ${option.gradient} rounded-2xl shadow-lg group-hover:shadow-xl transition-all duration-300`}>
-                      <IconComponent className="w-8 h-8 text-white" />
-                      <div className="absolute -top-2 -right-2 text-2xl">
-                        {option.emoji}
-                      </div>
+                  {/* Icon */}
+                  <div className="flex justify-center mb-3">
+                    <div className="p-3 bg-blue-600 rounded-lg">
+                      <IconComponent className="w-6 h-6 text-white" />
                     </div>
                   </div>
                   
                   {/* Title */}
-                  <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-slate-800 transition-colors">
+                  <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-slate-800 transition-colors">
                     {option.label}
                   </h3>
                   
                   {/* Description */}
-                  <p className={`text-sm ${option.textColor} group-hover:text-opacity-80 transition-colors leading-relaxed`}>
+                  <p className={`text-xs ${option.textColor} group-hover:text-opacity-80 transition-colors leading-relaxed`}>
                     {option.description}
                   </p>
                 </div>
 
                 {/* Action Indicator */}
-                <div className="flex justify-center mt-4">
-                  <div className={`w-8 h-1 bg-gradient-to-r ${option.gradient} rounded-full opacity-60 group-hover:opacity-100 transition-opacity`}></div>
+                <div className="flex justify-center mt-3">
+                  <div className="w-6 h-1 bg-blue-600 rounded-full opacity-60 group-hover:opacity-100 transition-opacity"></div>
                 </div>
               </button>
             );
           })}
-        </div>
-
-        {/* Stats Section */}
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 animate-slide-in">
-          <div className="card card-body text-center">
-            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-6 h-6 text-white" />
-            </div>
-            <h3 className="text-2xl font-bold text-slate-900 mb-2">Safe & Secure</h3>
-            <p className="text-slate-600">Enterprise-grade security for all your safety data</p>
-          </div>
-          
-          <div className="card card-body text-center">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4">
-              <Shield className="w-6 h-6 text-white" />
-            </div>
-            <h3 className="text-2xl font-bold text-slate-900 mb-2">Compliance Ready</h3>
-            <p className="text-slate-600">Built to meet industry safety standards and regulations</p>
-          </div>
-          
-          <div className="card card-body text-center">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4">
-              <UserCheck className="w-6 h-6 text-white" />
-            </div>
-            <h3 className="text-2xl font-bold text-slate-900 mb-2">User Friendly</h3>
-            <p className="text-slate-600">Intuitive interface designed for all skill levels</p>
-          </div>
         </div>
       </div>
     </div>

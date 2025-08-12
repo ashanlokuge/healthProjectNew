@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { UserRole } from '../lib/supabase';
-import { User, Shield, Users, Eye, EyeOff, Mail, Lock, AlertTriangle, Code } from 'lucide-react';
+import { User, Shield, Users, Eye, EyeOff, Mail, Lock, AlertTriangle } from 'lucide-react';
 
 export function Login() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -12,7 +12,7 @@ export function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const { signIn, signUp, setDeveloperMode } = useAuth();
+  const { signIn, signUp } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,17 +68,6 @@ export function Login() {
           <p className="mt-2 text-sm text-gray-600">
             Hazard Reporting System
           </p>
-        </div>
-
-        {/* Developer Mode Button */}
-        <div>
-          <button
-            onClick={() => setDeveloperMode(true)}
-            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
-          >
-            <Code className="w-4 h-4 mr-2" />
-            Developer Mode
-          </button>
         </div>
 
         {/* Form */}

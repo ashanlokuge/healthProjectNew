@@ -9,7 +9,7 @@ interface IncidentFormProps {
 }
 
 export function IncidentForm({ onBack, onSuccess }: IncidentFormProps) {
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     incident_title: '',
@@ -33,20 +33,20 @@ export function IncidentForm({ onBack, onSuccess }: IncidentFormProps) {
 
     try {
       console.log('Starting incident report submission...', { profile });
-      
-      if (!profile?.id) {
-        throw new Error('No user profile found. Please sign in again.');
+
+      if (!user?.id) {
+        throw new Error('No user found. Please sign in again.');
       }
 
       // Upload images first
       const imageUrls: string[] = [];
       for (const file of imageFiles) {
         console.log('Uploading image:', file.name);
-        
+
         // Create unique filename with timestamp and random string
         const fileExt = file.name.split('.').pop();
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-        
+
         const { data, error } = await supabase.storage
           .from('incident-images')
           .upload(fileName, file, {
@@ -58,37 +58,38 @@ export function IncidentForm({ onBack, onSuccess }: IncidentFormProps) {
           console.error('Error uploading image:', error);
           throw new Error(`Image upload failed: ${error.message}`);
         }
-        
+
         console.log('Image uploaded successfully:', data);
-        
+
         const { data: { publicUrl } } = supabase.storage
           .from('incident-images')
           .getPublicUrl(fileName);
-        
+
         imageUrls.push(publicUrl);
         console.log('Public URL generated:', publicUrl);
       }
 
       console.log('All images uploaded:', imageUrls);
 
-      // Create incident report
+      // Create incident report with all fields (using null for empty optional fields)
       const reportData = {
-        user_id: profile.id,
+        user_id: user.id,
         incident_title: formData.incident_title,
         description: formData.description,
         site: formData.site,
         department: formData.department,
         location: formData.location,
         date_of_incident: formData.date_of_incident,
-        time_of_incident: formData.time_of_incident,
         date_of_reporting: formData.date_of_reporting,
-        severity_level: formData.severity_level,
-        incident_type: formData.incident_type,
-        witnesses: formData.witnesses,
-        immediate_actions_taken: formData.immediate_actions_taken,
-        image_urls: imageUrls,
+        time_of_incident: formData.time_of_incident || null,
+        severity_level: formData.severity_level || null,
+        incident_type: formData.incident_type || null,
+        incident_category: null, // This field was missing and causing the error
+        witnesses: formData.witnesses || null,
+        immediate_actions_taken: formData.immediate_actions_taken || null,
+        image_urls: imageUrls.length > 0 ? imageUrls : null,
         status: 'submitted',
-        reporter_name: profile.full_name || profile.email,
+        reporter_name: profile?.full_name || profile?.email || 'Unknown',
       };
 
       console.log('Submitting incident report:', reportData);
@@ -385,7 +386,7 @@ export function IncidentForm({ onBack, onSuccess }: IncidentFormProps) {
                   </p>
                 </label>
               </div>
-              
+
               {imageFiles.length > 0 && (
                 <div className="mt-4">
                   <h4 className="text-sm font-medium text-gray-700 mb-2">Selected Images:</h4>

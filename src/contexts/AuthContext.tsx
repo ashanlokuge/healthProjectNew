@@ -17,7 +17,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isDeveloper, setIsDeveloper] = useState(false);
   const [currentRole, setCurrentRole] = useState<UserRole | null>(null);
 
   useEffect(() => {
@@ -179,7 +178,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Clear local state immediately for a responsive UI
     setUser(null);
     setProfile(null);
-    setIsDeveloper(false);
     setCurrentRole(null);
     setLoading(false); // Ensure loading is false after sign out attempt
 
@@ -200,15 +198,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const setDeveloperMode = (mode: boolean) => {
-    setIsDeveloper(mode);
-    if (!mode) {
-      setCurrentRole(profile?.role || null);
-    }
-  };
-
-
-
   const value = {
     user,
     profile,
@@ -216,8 +205,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signIn,
     signUp,
     signOut,
-    isDeveloper,
-    setDeveloperMode,
     currentRole,
     setCurrentRole,
   };
