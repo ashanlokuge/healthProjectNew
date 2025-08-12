@@ -523,12 +523,12 @@ export function AssigneeDashboard() {
                   <div className="flex justify-between items-start mb-6">
                     <div className="flex items-start space-x-4">
                       <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${assignment.review_status === 'approved'
-                          ? 'bg-gradient-to-br from-green-500 to-green-600'
-                          : assignment.review_status === 'rejected'
-                            ? 'bg-gradient-to-br from-red-500 to-red-600'
-                            : assignment.completed_at
-                              ? 'bg-gradient-to-br from-blue-500 to-blue-600'
-                              : 'bg-gradient-to-br from-purple-500 to-purple-600'
+                        ? 'bg-gradient-to-br from-green-500 to-green-600'
+                        : assignment.review_status === 'rejected'
+                          ? 'bg-gradient-to-br from-red-500 to-red-600'
+                          : assignment.completed_at
+                            ? 'bg-gradient-to-br from-blue-500 to-blue-600'
+                            : 'bg-gradient-to-br from-purple-500 to-purple-600'
                         }`}>
                         {assignment.review_status === 'approved' ? (
                           <CheckCircle className="w-6 h-6 text-white" />
@@ -571,10 +571,10 @@ export function AssigneeDashboard() {
                       )}
                       {assignment.review_status && (
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${assignment.review_status === 'approved'
-                            ? 'bg-green-100 text-green-700 border-green-200'
-                            : assignment.review_status === 'rejected'
-                              ? 'bg-red-100 text-red-700 border-red-200'
-                              : 'bg-yellow-100 text-yellow-700 border-yellow-200'
+                          ? 'bg-green-100 text-green-700 border-green-200'
+                          : assignment.review_status === 'rejected'
+                            ? 'bg-red-100 text-red-700 border-red-200'
+                            : 'bg-yellow-100 text-yellow-700 border-yellow-200'
                           }`}>
                           {assignment.review_status === 'approved' ? '✅ APPROVED' :
                             assignment.review_status === 'rejected' ? '❌ REJECTED' :

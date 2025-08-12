@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { HazardReporting } from './HazardReporting';
 import { IncidentReporting } from './IncidentReporting';
 import SOTReportingForm from './SOTReportingForm'; // Import the new component
+import LicenseManagement from './LicenseManagement'; // Import the License Management component
 import { LogOut, AlertTriangle, FileText, Shield, Clock, UserCheck, CheckCircle, Settings, User, Bell } from 'lucide-react';
 
 type MenuOption = 
@@ -123,6 +124,10 @@ export function MainDashboard() {
 
   if (selectedMenu === 'sot-reporting') {
     return <SOTReportingForm onBack={handleBackToMenu} />; // Render SOTReportingForm with back function
+  }
+
+  if (selectedMenu === 'license-documents') {
+    return <LicenseManagement onBack={handleBackToMenu} />; // Render LicenseManagement with back function
   }
 
   return (

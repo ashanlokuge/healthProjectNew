@@ -114,3 +114,23 @@ export interface SOTReport {
   created_at: string;
   updated_at: string;
 }
+
+export interface License {
+  id: string;
+  user_id: string;
+  license_name: string;
+  responsible_person: string;
+  authority: string;
+  validity_days: number;
+  apply_before_days: number;
+  date_of_renewal: string;
+  next_renewal_date?: string;
+  remark?: string;
+  document_submission?: string;
+  reminder: boolean;
+  escalation01: boolean;
+  escalation02: boolean;
+  status: 'active' | 'expired' | 'pending_renewal' | 'suspended';
+  created_at: string;
+  updated_at: string;
+}
