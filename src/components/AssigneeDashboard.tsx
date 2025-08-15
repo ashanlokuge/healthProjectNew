@@ -464,7 +464,7 @@ export function AssigneeDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       <div className="max-w-7xl mx-auto">
         {/* Modern Header */}
         <div className="bg-white/90 backdrop-blur-lg border-b border-slate-200/50 shadow-lg mb-8">
@@ -472,22 +472,22 @@ export function AssigneeDashboard() {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <div className="relative">
-                  <div className="w-16 h-16 bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-700 rounded-2xl flex items-center justify-center shadow-xl">
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 rounded-2xl flex items-center justify-center shadow-xl">
                     <Users className="w-8 h-8 text-white" />
                   </div>
-                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
+                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-blue-500 rounded-full border-2 border-white flex items-center justify-center">
                     <CheckCircle className="w-3 h-3 text-white" />
                   </div>
                 </div>
                 <div>
-                  <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 bg-clip-text text-transparent">
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 bg-clip-text text-transparent">
                     My Assignments
                   </h1>
                   <p className="text-slate-600 text-lg font-medium">Complete assigned safety tasks and submit evidence</p>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
-                <div className="px-4 py-2 bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-700 rounded-full text-sm font-semibold border border-purple-200">
+                <div className="px-4 py-2 bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 rounded-full text-sm font-semibold border border-blue-200">
                   🎯 Active Assignee
                 </div>
               </div>
@@ -499,14 +499,14 @@ export function AssigneeDashboard() {
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <div className="text-center">
-                <div className="w-16 h-16 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
+                <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
                 <p className="text-slate-600 text-lg font-medium">Loading your assignments...</p>
               </div>
             </div>
           ) : assignments.length === 0 ? (
             <div className="text-center py-20">
-              <div className="w-24 h-24 bg-gradient-to-br from-purple-100 to-purple-200 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                <CheckCircle className="w-12 h-12 text-purple-600" />
+              <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-blue-200 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                <CheckCircle className="w-12 h-12 text-blue-600" />
               </div>
               <h3 className="text-2xl font-bold text-slate-900 mb-2">No Assignments Yet</h3>
               <p className="text-slate-600 text-lg">You don't have any assignments at the moment</p>
@@ -523,12 +523,12 @@ export function AssigneeDashboard() {
                   <div className="flex justify-between items-start mb-6">
                     <div className="flex items-start space-x-4">
                       <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${assignment.review_status === 'approved'
-                        ? 'bg-gradient-to-br from-green-500 to-green-600'
+                        ? 'bg-gradient-to-br from-blue-500 to-blue-600'
                         : assignment.review_status === 'rejected'
                           ? 'bg-gradient-to-br from-red-500 to-red-600'
                           : assignment.completed_at
                             ? 'bg-gradient-to-br from-blue-500 to-blue-600'
-                            : 'bg-gradient-to-br from-purple-500 to-purple-600'
+                            : 'bg-gradient-to-br from-blue-500 to-blue-600'
                         }`}>
                         {assignment.review_status === 'approved' ? (
                           <CheckCircle className="w-6 h-6 text-white" />
@@ -553,7 +553,7 @@ export function AssigneeDashboard() {
                             <span>Due: {new Date(assignment.target_completion_date).toLocaleDateString()}</span>
                           </div>
                           {assignment.completed_at && (
-                            <div className="flex items-center space-x-1 text-green-600">
+                            <div className="flex items-center space-x-1 text-blue-600">
                               <CheckCircle className="w-4 h-4" />
                               <span>Completed: {new Date(assignment.completed_at).toLocaleDateString()}</span>
                             </div>
@@ -571,7 +571,7 @@ export function AssigneeDashboard() {
                       )}
                       {assignment.review_status && (
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${assignment.review_status === 'approved'
-                          ? 'bg-green-100 text-green-700 border-green-200'
+                          ? 'bg-blue-100 text-blue-700 border-blue-200'
                           : assignment.review_status === 'rejected'
                             ? 'bg-red-100 text-red-700 border-red-200'
                             : 'bg-yellow-100 text-yellow-700 border-yellow-200'
@@ -623,7 +623,7 @@ export function AssigneeDashboard() {
                   <div className="flex justify-between items-center pt-4 border-t border-slate-200">
                     <div className="flex items-center space-x-3">
                       {assignment.completed_at && (
-                        <div className="flex items-center space-x-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                        <div className="flex items-center space-x-2 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
                           <CheckCircle className="w-4 h-4" />
                           <span>Task Completed</span>
                         </div>
@@ -634,7 +634,7 @@ export function AssigneeDashboard() {
                       {!assignment.completed_at ? (
                         <button
                           onClick={() => setSelectedAssignment(assignment)}
-                          className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-2 rounded-xl font-semibold hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                          className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-2 rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
                         >
                           🚀 Complete Task
                         </button>
@@ -656,7 +656,7 @@ export function AssigneeDashboard() {
                       ) : (
                         <button
                           onClick={() => showTaskStatus(assignment)}
-                          className="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-2 rounded-xl font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                          className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-2 rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
                         >
                           📊 View Status
                         </button>
