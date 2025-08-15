@@ -6,7 +6,7 @@ import SOTReportingForm from './SOTReportingForm'; // Import the new component
 import LicenseManagement from './LicenseManagement'; // Import the License Management component
 import { LogOut, AlertTriangle, FileText, Shield, Clock, Settings, User, Bell } from 'lucide-react';
 
-type MenuOption = 
+type MenuOption =
   | 'hazard-reporting'
   | 'sot-reporting'
   | 'incident-reporting'
@@ -32,10 +32,10 @@ export function MainDashboard() {
       textColor: 'text-blue-600'
     },
     {
-      id: 'sot-reporting' as MenuOption,
-      label: 'SOT Reporting',
-      description: 'Safe Operating Task reporting',
-      icon: Shield,
+      id: 'incident-reporting' as MenuOption,
+      label: 'Incident Reporting',
+      description: 'Report workplace incidents',
+      icon: FileText,
       color: 'blue',
       gradient: 'from-blue-500 to-blue-600',
       bgColor: 'bg-blue-50',
@@ -43,10 +43,10 @@ export function MainDashboard() {
       textColor: 'text-blue-600'
     },
     {
-      id: 'incident-reporting' as MenuOption,
-      label: 'Incident Reporting',
-      description: 'Report workplace incidents',
-      icon: FileText,
+      id: 'sot-reporting' as MenuOption,
+      label: 'SOT Reporting',
+      description: 'Safe Operating Task reporting',
+      icon: Shield,
       color: 'blue',
       gradient: 'from-blue-500 to-blue-600',
       bgColor: 'bg-blue-50',
@@ -197,12 +197,12 @@ export function MainDashboard() {
                       <IconComponent className="w-6 h-6 text-white" />
                     </div>
                   </div>
-                  
+
                   {/* Title */}
                   <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-slate-800 transition-colors">
                     {option.label}
                   </h3>
-                  
+
                   {/* Description */}
                   <p className={`text-xs ${option.textColor} group-hover:text-opacity-80 transition-colors leading-relaxed`}>
                     {option.description}

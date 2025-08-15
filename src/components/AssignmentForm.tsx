@@ -15,7 +15,7 @@ export function AssignmentForm({ report, onBack, onSuccess }: AssignmentFormProp
   const [filteredAssignees, setFilteredAssignees] = useState<Profile[]>([]);
   const [emailSearch, setEmailSearch] = useState('');
   const [loading, setLoading] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<string>('');
+
   const [formData, setFormData] = useState({
     action: '',
     targetDate: '',
@@ -26,42 +26,37 @@ export function AssignmentForm({ report, onBack, onSuccess }: AssignmentFormProp
   const loadAssignees = useCallback(async () => {
     try {
       console.log('🔍 Loading assignees...');
-      setDebugInfo('Loading assignees...');
-      
+
       const { data: allProfiles, error: allError } = await supabase
         .from('profiles')
         .select('*');
-      
+
       console.log('📊 All profiles query:', { allProfiles, allError });
-      setDebugInfo(`All profiles: ${allProfiles?.length || 0}, Error: ${allError?.message || 'None'}`);
-      
+
       if (allError) {
         console.error('❌ Error loading all profiles:', allError);
         setAssignees([]);
         setFilteredAssignees([]);
         return;
       }
-      
+
       if (allProfiles) {
         console.log('📊 Total profiles found:', allProfiles.length);
-        
+
         const roleCounts = allProfiles.reduce((acc, p) => {
           acc[p.role] = (acc[p.role] || 0) + 1;
           return acc;
         }, {} as Record<string, number>);
         console.log('📊 Role distribution:', roleCounts);
-        setDebugInfo(prev => prev + `\nRole distribution: ${JSON.stringify(roleCounts)}`);
-        
+
         const assigneeProfiles = allProfiles.filter(p => p.role === 'assignee');
         console.log('📊 Assignee profiles found:', assigneeProfiles);
-        setDebugInfo(prev => prev + `\nAssignee profiles: ${assigneeProfiles.length}`);
-        
+
         setAssignees(assigneeProfiles);
         setFilteredAssignees(assigneeProfiles);
       }
     } catch (error) {
       console.error('💥 Error loading assignees:', error);
-      setDebugInfo(`Error: ${error}`);
       setAssignees([]);
       setFilteredAssignees([]);
     }
@@ -89,7 +84,7 @@ export function AssignmentForm({ report, onBack, onSuccess }: AssignmentFormProp
 
     try {
       const selectedAssignee = assignees.find(a => a.id === formData.assigneeId);
-      
+
       if (!selectedAssignee) {
         alert('Please select an assignee');
         setLoading(false);
@@ -266,13 +261,8 @@ export function AssignmentForm({ report, onBack, onSuccess }: AssignmentFormProp
           </button>
         </div>
       </form>
-      
-      {debugInfo && (
-        <div className="mt-4 p-3 bg-gray-100 rounded-md">
-          <h4 className="font-semibold text-gray-700 mb-2">Debug Info:</h4>
-          <pre className="text-xs text-gray-600 whitespace-pre-wrap">{debugInfo}</pre>
-        </div>
-      )}
+
+
     </div>
   );
 } 
