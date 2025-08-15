@@ -15,18 +15,18 @@ export function UserDashboard() {
   // Helper function to parse image URLs from different data formats
   const parseImageUrls = (imageData: unknown): string[] => {
     console.log('🔍 parseImageUrls called with:', imageData);
-    
+
     if (!imageData) {
       console.log('❌ No image data provided');
       return [];
     }
-    
+
     // If it's already an array of strings, return it
     if (Array.isArray(imageData) && imageData.every(url => typeof url === 'string')) {
       console.log('✅ Found array of strings:', imageData);
       return imageData;
     }
-    
+
     // If it's a JSON string, try to parse it
     if (typeof imageData === 'string') {
       try {
@@ -39,13 +39,13 @@ export function UserDashboard() {
         console.warn('⚠️ Failed to parse image data as JSON:', imageData);
       }
     }
-    
+
     // If it's a single string URL, wrap it in an array
     if (typeof imageData === 'string' && imageData.startsWith('http')) {
       console.log('✅ Found single URL string:', imageData);
       return [imageData];
     }
-    
+
     console.warn('❌ Unexpected image data format:', imageData);
     return [];
   };
@@ -138,7 +138,7 @@ export function UserDashboard() {
                     {report.status.replace('_', ' ').toUpperCase()}
                   </span>
                 </div>
-                
+
                 <div className="space-y-2 text-sm text-blue-600">
                   <div className="flex items-center space-x-2">
                     <MapPin className="w-4 h-4" />
@@ -149,9 +149,9 @@ export function UserDashboard() {
                     <span>Reported: {new Date(report.date_of_reporting).toLocaleDateString()}</span>
                   </div>
                 </div>
-                
+
                 <p className="text-blue-700 mt-3 text-sm line-clamp-2">{report.description}</p>
-                
+
                 {report.risk_level && (
                   <div className="mt-4">
                     <span className="text-xs font-medium text-blue-500">Risk Level:</span>
@@ -244,46 +244,20 @@ export function UserDashboard() {
                   const parsedImageUrls = parseImageUrls(selectedReport.image_urls);
                   console.log('🖼️ Parsed image URLs:', parsedImageUrls);
                   console.log('🖼️ Original image_urls:', selectedReport.image_urls);
-                  
+
                   return parsedImageUrls.length > 0 ? (
                     <div>
                       <p className="text-sm font-medium text-blue-900 mb-3">Submitted Images</p>
-                      
-                       {/* Debug: Show the actual URLs */}
-                       <div className="mb-4 p-3 bg-gray-100 rounded text-xs">
-                         <p><strong>Debug - Image URLs:</strong></p>
-                         {parsedImageUrls.map((url, index) => (
-                           <p key={index} className="break-all">Image {index + 1}: {url}</p>
-                         ))}
-                         <p><strong>URL Analysis:</strong></p>
-                         {parsedImageUrls.map((url, index) => (
-                           <p key={index}>
-                             Image {index + 1}: 
-                             {url.includes('.jpg') || url.includes('.png') || url.includes('.jpeg') || url.includes('.gif') 
-                               ? ' ✅ Looks like image URL' 
-                               : ' ❌ Does NOT look like image URL'}
-                           </p>
-                         ))}
-                       </div>
-                       
-                       {/* Test button to open first image */}
-                       <button
-                         onClick={() => {
-                           console.log('🧪 Test: Opening first image:', parsedImageUrls[0]);
-                           setSelectedImage(parsedImageUrls[0]);
-                         }}
-                         className="mb-3 bg-blue-500 text-white px-3 py-2 rounded text-sm hover:bg-blue-600"
-                       >
-                         🧪 Test: Open First Image in Full Size
-                       </button>
-                       
-                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+
+
+
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                         {parsedImageUrls.map((imageUrl, index) => {
                           console.log(`🖼️ Rendering image ${index + 1}:`, imageUrl);
                           return (
                             <div key={index} className="relative group">
-                              
-                              
+
+
                               <img
                                 src={imageUrl}
                                 alt={`Hazard image ${index + 1}`}
@@ -320,7 +294,7 @@ export function UserDashboard() {
                           );
                         })}
                       </div>
-                      
+
                       <p className="text-xs text-blue-500 mt-2">Click on any image to view it in full size</p>
                     </div>
                   ) : (
@@ -354,7 +328,7 @@ export function UserDashboard() {
 
         {/* Full Size Image Modal */}
         {selectedImage && (
-          <div 
+          <div
             className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center p-4 z-[9999]"
             onClick={() => {
               console.log('🖼️ Closing full-size modal');
@@ -377,7 +351,7 @@ export function UserDashboard() {
                   console.error('❌ Full-size image failed to load:', selectedImage);
                 }}
               />
-              
+
               {/* Close button */}
               <button
                 onClick={(e) => {
@@ -389,12 +363,12 @@ export function UserDashboard() {
               >
                 <X className="w-6 h-6" />
               </button>
-              
+
               {/* Image info */}
               <div className="absolute bottom-4 left-4 bg-black bg-opacity-70 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
                 <span>Click outside or press X to close</span>
               </div>
-              
+
               {/* Download button */}
               <button
                 onClick={(e) => {
