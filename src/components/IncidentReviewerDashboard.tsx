@@ -17,6 +17,7 @@ interface IncidentReport {
   incident_category: string;
   severity_level: string;
   status: string;
+  image_urls?: string[] | null;
   created_at: string;
   user_id: string;
   profiles?: {
@@ -50,6 +51,7 @@ interface IncidentAssignment {
     time_of_incident: string;
     incident_category: string;
     severity_level: string;
+    image_urls?: string[] | null;
   };
 }
 
@@ -493,6 +495,31 @@ export function IncidentReviewerDashboard() {
               <p className="text-gray-700">{selectedReport.description}</p>
             </div>
 
+            {/* Original Incident Images */}
+            {selectedReport.image_urls && selectedReport.image_urls.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">📸 Original Incident Images</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {selectedReport.image_urls.map((imageUrl, index) => (
+                    <div key={index} className="relative aspect-square rounded-lg overflow-hidden border">
+                      <img
+                        src={imageUrl}
+                        alt={`Incident Image ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          console.error('Failed to load incident image:', imageUrl);
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <p className="text-sm text-gray-500 mt-2">
+                  {selectedReport.image_urls.length} image{selectedReport.image_urls.length !== 1 ? 's' : ''} uploaded with this incident report
+                </p>
+              </div>
+            )}
+
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Search Assignee by Email
@@ -684,6 +711,32 @@ export function IncidentReviewerDashboard() {
               )}
             </div>
 
+            {/* Original Incident Images */}
+            {selectedAssignment.incident_reports && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">📸 Original Incident Images</h3>
+                {selectedAssignment.incident_reports.image_urls && selectedAssignment.incident_reports.image_urls.length > 0 ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {selectedAssignment.incident_reports.image_urls.map((imageUrl, index) => (
+                      <div key={index} className="relative aspect-square rounded-lg overflow-hidden border">
+                        <img
+                          src={imageUrl}
+                          alt={`Incident Image ${index + 1}`}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            console.error('Failed to load incident image:', imageUrl);
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-600">No images were uploaded with the original incident report.</p>
+                )}
+              </div>
+            )}
+
             <div className="flex justify-end space-x-4">
               <button
                 onClick={() => setSelectedAssignment(null)}
@@ -798,37 +851,79 @@ export function IncidentReviewerDashboard() {
                 </div>
               ) : (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {reports.map((report) => (
-                    <div
-                      key={report.id}
-                      className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
-                    >
-                      <div className="flex justify-between items-start mb-4">
-                        <h3 className="text-lg font-semibold text-gray-900">{report.incident_title}</h3>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(report.status)}`}>
-                          {report.status.toUpperCase()}
-                        </span>
-                      </div>
+                  {reports.map((report) => {
+                    const hasImages = report.image_urls && report.image_urls.length > 0;
+                    
+                    return (
+                      <div
+                        key={report.id}
+                        className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex justify-between items-start mb-4">
+                          <h3 className="text-lg font-semibold text-gray-900">{report.incident_title}</h3>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(report.status)}`}>
+                            {report.status.toUpperCase()}
+                          </span>
+                        </div>
 
-                      <div className="space-y-2 text-sm text-gray-600">
-                        <p><strong>Site:</strong> {report.site || 'Not specified'}</p>
-                        <p><strong>Department:</strong> {report.department || 'Not specified'}</p>
-                        <p><strong>Category:</strong> {report.incident_category || 'Not specified'}</p>
-                        <p><strong>Severity:</strong> {report.severity_level || 'Not specified'}</p>
-                      </div>
+                        <div className="space-y-2 text-sm text-gray-600">
+                          <p><strong>Site:</strong> {report.site || 'Not specified'}</p>
+                          <p><strong>Department:</strong> {report.department || 'Not specified'}</p>
+                          <p><strong>Category:</strong> {report.incident_category || 'Not specified'}</p>
+                          <p><strong>Severity:</strong> {report.severity_level || 'Not specified'}</p>
+                        </div>
 
-                      <p className="text-gray-700 mt-3 text-sm line-clamp-2">{report.description}</p>
+                        <p className="text-gray-700 mt-3 text-sm line-clamp-2">{report.description}</p>
 
-                      <div className="mt-4 pt-4 border-t border-gray-200">
-                        <button
-                          onClick={() => setSelectedReport(report)}
-                          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                        >
-                          Assign Task →
-                        </button>
+                        {/* Original Incident Images */}
+                        {hasImages && (
+                          <div className="mt-4">
+                            <div className="flex items-center space-x-2 mb-3">
+                              <span className="text-xs font-medium text-gray-500">
+                                📸 Original Images ({report.image_urls!.length})
+                              </span>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-2">
+                              {report.image_urls!.slice(0, 4).map((imageUrl, index) => (
+                                <div key={index} className="relative aspect-square rounded-lg overflow-hidden border">
+                                  <img
+                                    src={imageUrl}
+                                    alt={`Incident Image ${index + 1}`}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      console.error('Failed to load incident image:', imageUrl);
+                                      e.currentTarget.style.display = 'none';
+                                    }}
+                                    onLoad={() => {
+                                      console.log('✅ Incident image loaded successfully:', imageUrl);
+                                    }}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                            
+                            {report.image_urls!.length > 4 && (
+                              <div className="mt-2 text-center">
+                                <span className="text-xs text-gray-500">
+                                  +{report.image_urls!.length - 4} more image{report.image_urls!.length - 4 !== 1 ? 's' : ''}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <button
+                            onClick={() => setSelectedReport(report)}
+                            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                          >
+                            Assign Task →
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )
             ) : activeTab === 'assignments' ? (
@@ -877,6 +972,41 @@ export function IncidentReviewerDashboard() {
                           <span className="font-medium">Remark:</span> {assignment.remark}
                         </p>
                       )}
+
+                      {/* Original Incident Images */}
+                      {assignment.incident_reports?.image_urls && assignment.incident_reports.image_urls.length > 0 && (
+                        <div className="mt-4">
+                          <div className="flex items-center space-x-2 mb-3">
+                            <span className="text-xs font-medium text-gray-500">
+                              📸 Original Images ({assignment.incident_reports.image_urls.length})
+                            </span>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-2">
+                            {assignment.incident_reports.image_urls.slice(0, 4).map((imageUrl, index) => (
+                              <div key={index} className="relative aspect-square rounded-lg overflow-hidden border">
+                                <img
+                                  src={imageUrl}
+                                  alt={`Incident Image ${index + 1}`}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    console.error('Failed to load incident image:', imageUrl);
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                          
+                          {assignment.incident_reports.image_urls.length > 4 && (
+                            <div className="mt-2 text-center">
+                              <span className="text-xs text-gray-500">
+                                +{assignment.incident_reports.image_urls.length - 4} more image{assignment.incident_reports.image_urls.length - 4 !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -923,6 +1053,41 @@ export function IncidentReviewerDashboard() {
                         <p className="text-gray-700 mt-3 bg-gray-50 p-3 rounded-md">
                           <span className="font-medium">Remark:</span> {assignment.remark}
                         </p>
+                      )}
+
+                      {/* Original Incident Images */}
+                      {assignment.incident_reports?.image_urls && assignment.incident_reports.image_urls.length > 0 && (
+                        <div className="mt-4">
+                          <div className="flex items-center space-x-2 mb-3">
+                            <span className="text-xs font-medium text-gray-500">
+                              📸 Original Images ({assignment.incident_reports.image_urls.length})
+                            </span>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-2">
+                            {assignment.incident_reports.image_urls.slice(0, 4).map((imageUrl, index) => (
+                              <div key={index} className="relative aspect-square rounded-lg overflow-hidden border">
+                                <img
+                                  src={imageUrl}
+                                  alt={`Incident Image ${index + 1}`}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    console.error('Failed to load incident image:', imageUrl);
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                          
+                          {assignment.incident_reports.image_urls.length > 4 && (
+                            <div className="mt-2 text-center">
+                              <span className="text-xs text-gray-500">
+                                +{assignment.incident_reports.image_urls.length - 4} more image{assignment.incident_reports.image_urls.length - 4 !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       )}
 
                       <div className="mt-4 pt-4 border-t border-gray-200">
@@ -988,6 +1153,41 @@ export function IncidentReviewerDashboard() {
                         <p className="text-red-700 mt-3 bg-red-50 p-3 rounded-md">
                           <span className="font-medium">Rejection Reason:</span> {assignment.review_reason}
                         </p>
+                      )}
+
+                      {/* Original Incident Images */}
+                      {assignment.incident_reports?.image_urls && assignment.incident_reports.image_urls.length > 0 && (
+                        <div className="mt-4">
+                          <div className="flex items-center space-x-2 mb-3">
+                            <span className="text-xs font-medium text-gray-500">
+                              📸 Original Images ({assignment.incident_reports.image_urls.length})
+                            </span>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-2">
+                            {assignment.incident_reports.image_urls.slice(0, 4).map((imageUrl, index) => (
+                              <div key={index} className="relative aspect-square rounded-lg overflow-hidden border">
+                                <img
+                                  src={imageUrl}
+                                  alt={`Incident Image ${index + 1}`}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    console.error('Failed to load incident image:', imageUrl);
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                          
+                          {assignment.incident_reports.image_urls.length > 4 && (
+                            <div className="mt-2 text-center">
+                              <span className="text-xs text-gray-500">
+                                +{assignment.incident_reports.image_urls.length - 4} more image{assignment.incident_reports.image_urls.length - 4 !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
                   ))}
